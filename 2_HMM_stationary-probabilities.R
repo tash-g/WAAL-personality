@@ -60,6 +60,7 @@ ci.stationary <- function(model, cov, alpha) {
   return(ci.list)
 }
 
+
 # AIM OF SCRIPT - to plot predicted stationary probabilities for a range of specified covariates (essentially gives
 # time-activity budgets)
 
@@ -73,6 +74,18 @@ f.mod <- model
 file.in <- paste0("./Data_outputs/", paste0("M_mod_", 6, ".RData"))
 load(file = file.in)
 m.mod <- model
+
+
+
+# Initial plot: look at stiationay probabilities --------------------------
+
+plotStationary(f.best.mod,plotCI = TRUE)
+plotStationary(m.best.mod,plotCI = TRUE)
+
+
+# plotStationary() function only allows you to predict for a row of covariate values within the plotting architecture of momentuhmm
+# to extract confidence intervals of the stationary transition probabilities, R. Joo wrote a function based on momentuhmm internal functions (in Apr. 2019)
+# for a range of specified covariates and output to plot in ggplot
 
 
 ##### 1. PLOTTING STATIONARY PROBABILITIES FOR COVARIATE VALUES OF WIND SPEED ###############
@@ -139,10 +152,28 @@ stat.df[,c(9,10)] <- lapply(stat.df[,c(9,10)], as.factor)
 
 stat.df$pers_state <- as.factor(as.character(paste(stat.df$pers, stat.df$state, sep = "_")))
 
+
+## Stats for manuscript
+
+# Travel vs search probability for shy birds (averaged)
+mean(subset(stat.df, state == "search" & WindSp == 0.05 & pers == "shy")$prob) # 0.4200016
+mean(subset(stat.df, state == "travel" & WindSp == 0.05 & pers == "shy")$prob) # 0.2081161
+
+mean(subset(stat.df, state == "search" & WindSp == 20.05 & pers == "shy")$prob) # 0.3818119
+mean(subset(stat.df, state == "travel" & WindSp == 20.05 & pers == "shy")$prob) # 0.5183177
+
+# Switch point
+## Get from direction * speed section
+
+# Rest probability
+mean(subset(stat.df, state == "rest" & WindSp == 0.05)$prob) # 0.3514381
+mean(subset(stat.df, state == "rest" & WindSp == 20.05)$prob) # 0.120295
+
 # create plot
 
 shy_col <- "#00DD2F"
 bold_col <- "purple"
+
 
 stat.df$sex <- factor(stat.df$sex, labels = c("Female", "Male"))
 
@@ -322,6 +353,11 @@ stat.df$pers_state <- as.factor(as.character(paste(stat.df$pers, stat.df$state, 
 
 ## Stats for manuscript
 
+# P search + travel in low headwinds and tailwinds for shy birds
+mean(subset(stat.df, state == "search" & pers == "shy" & WindDir == 0 & WindSp < 0.1)$prob)
+mean(subset(stat.df, state == "travel" & pers == "shy" & WindDir == 0 & WindSp < 0.1)$prob)
+
+
 # Get switchpoint where travel > search for shy birds
 # Crosswind
 x <- subset(stat.df, state == "search" & pers == "shy" & sex == "M" & WindDir == 90)$prob
@@ -376,7 +412,7 @@ for (i in 1:length(dirs)){
   png(paste0("Figures/Transition Estimates/Stationary estimates/stationary_transitions_SPEED_", dirLabels[i], "wind.png"), width = 9, height = 7, units = "in", res = 600)
   print(myplot)
   dev.off()
-  
+
 }
 
 

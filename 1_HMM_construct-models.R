@@ -1,28 +1,39 @@
 ### AIM: Run HMM combinations based on wind and personality predictors; use AIC to identify the best model
 
+
 # Preamble ----------------------------------------------------------------
 
 library(momentuHMM); library(ggplot2); library(dplyr)
 
+source("Functions/gps_functions.R")
+
 ### LOAD IN TRACKS ####
 
-gps <- read.csv(file = "./data/WAAL_gps_2010-2021_personality_wind_radar.csv", na.strings = "NA")
-names(gps)[11] <- "ID"
-names(gps)[9] <- "WindDir"
+gps <- read.csv(file = "./data/WAAL_gps_2010-2021_personality_wind.csv", na.strings = "NA")
+names(gps)[10] <- "ID"
+names(gps)[8] <- "WindDir"
 gps <- gps[order(gps$ID, gps$DateTime),]
 gps$DateTime <- NULL
 
 ## Isolate columns and specify types
-gps[,c(1,3,4,9)] <- lapply(gps[,c(1,3,4,9)], as.factor)
-gps[,c(2, 5:8, 11)] <- lapply(gps[,c(2, 5:8, 11)], as.numeric)
+gps[,c(1,2,3,8,9)] <- lapply(gps[,c(1,2,3,8,9)], as.factor)
+gps[,c(4:7,10)] <- lapply(gps[,c(4:7,10)], as.numeric)
 
 # Some NA wind directions - at end of trip, don't know bearing
 gps <- subset(gps, !is.na(WindDir))
 
+## Sample sizes
+nlevels(gps$Ring) # 294 individuals
+tripz <- gps %>% dplyr::group_by(Ring, Year) %>% dplyr::summarise(trips = length(unique(ID)))
+sum(tripz$trips) # 510 trips
+mean(tripz$trips, na.rm=T) # mean 1.3 trips per individual
+
+
+
 # INITIALISE HMM DATA ---------------------------------------------------------
 
 dat_OG <- prepData(gps, type= "LL", # longs and lats
-                   coordNames = c("Longitude", "Latitude")) ## these are our names
+               coordNames = c("Longitude", "Latitude")) ## these are our names
 head(dat_OG)
 
 ## Remove weird step lengths
@@ -42,7 +53,10 @@ location_0 <- c(0.00302, 0.00343, 0.0291)
 concentration_0 <- c(50.79, 1.27, 44.02)
 anglePar0 <- c(location_0,concentration_0)
 
-### Dealing with zeros by setting to very small numbers
+
+### Dealing with zeros
+
+# Set 0s to very small numbers (zero par gives strange pseudo-residuals)
 dat <- dat_OG
 
 ind_zero <- which(dat$step == 0)
@@ -61,7 +75,7 @@ dat <- subset(dat, !is.na(step))
 
 # RUN THE NULL MODEL ------------------------------------------------------
 
-# first run null models with no covariates on transition probabilities
+#  first run null models with no covariates on transition probabilities
 
 stateNames <- c("travel","search", "rest")
 
@@ -69,10 +83,10 @@ dat_male <- subset(dat, Sex == "M")
 dat_female <- subset(dat, Sex == "F")
 
 m1_M <- fitHMM(data=dat_male, nbStates=3,
-               dist=list(step="gamma",angle="vm"),
-               Par0=list(step=stepPar0, angle=anglePar0),
-               estAngleMean = list(angle=TRUE),
-               stateNames = stateNames)
+             dist=list(step="gamma",angle="vm"),
+             Par0=list(step=stepPar0, angle=anglePar0),
+             estAngleMean = list(angle=TRUE),
+             stateNames = stateNames)
 
 m1_F <- fitHMM(data=dat_female, nbStates=3,
                dist=list(step="gamma",angle="vm"),
@@ -83,15 +97,23 @@ m1_F <- fitHMM(data=dat_female, nbStates=3,
 save(m1_M, file = "Data_outputs/M_mod_1.RData")
 save(m1_F, file = "Data_outputs/F_mod_1.RData")
 
+# Plot pseudo-residuals
+plotPR(m1)
+
+# Look at acf of step length over longer time lag
+acf(dat$step[!is.na(dat$step)], lag.max = 300)
+
+
 #load("Data_outputs/M_mod_1.RData")
 #load("Data_outputs/F_mod_1.RData")
 
 # SET UP FORMULA FOR ALL MODEL COMBINATIONS -------------------------------
 
-## Run the next two sections twice - once for males, once for females
+## Run next couple of models for males and females separately - make sure to change model names as appropriate
 
 ### CURRENTLY RUNNING FOR FEMALES ###
 
+## Set up personality formulae 
 # Split data by sex, use Tommy's best model as basis
 # WindSp:Sex + WindSp + Sex + LoD + WindDir + WindSp:Sex:WindDir + WindSp:WindDir
 
@@ -116,7 +138,6 @@ formula[[18]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + Win
 formula[[19]] <- ~ WindSp + mean_BLUP_logit + LoD + WindDir + WindDir:mean_BLUP_logit + WindSp:mean_BLUP_logit:WindDir + WindSp:WindDir
 formula[[20]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir + WindDir:mean_BLUP_logit + WindSp:WindDir
 formula[[21]] <- ~ WindSp + mean_BLUP_logit + LoD + WindDir + WindDir:mean_BLUP_logit + WindSp:WindDir
-formula[[22]] <- ~ WindSp:mean_BLUP_logit + WindSp + LoD + WindDir + WindSp:WindDir + attendance
 
 
 # this function gets starting values for each model from existing null model fit for a specified covariate formula
@@ -124,6 +145,7 @@ Par <- list()
 for (i in 2:length(formula)){
   Par[[i]] <- getPar0(model=m1_F, nbStates=3, formula = formula[[i]])
 }
+
 
 
 # RUN ALL THE MODELS ------------------------------------------------------
@@ -136,17 +158,17 @@ stateNames<-c("travel","search", "rest")
 m.list <- vector(mode = "list", length =length(formula))
 
 for (i in 2:length(formula)) {
-  print(i)
-  m.list[[i]] <- fitHMM(data=dat_female, nbStates=3,
-                        dist=list(step="gamma",angle="vm"),
-                        Par0=list(step=Par[[i]]$Par$step, angle=Par[[i]]$Par$angle,delta0 = Par[[i]]$delta),
-                        estAngleMean = list(angle=TRUE), beta0 = Par[[i]]$beta,
-                        stateNames = stateNames, 
-                        formula = formula[[i]])
-  model <- m.list[[i]]
-  file.out <- paste0("./Data_outputs/", paste0("F_mod_", i, ".RData"))
-  save(model, file = file.out)
-}
+    print(i)
+    m.list[[i]] <- fitHMM(data=dat_female, nbStates=3,
+                            dist=list(step="gamma",angle="vm"),
+                            Par0=list(step=Par[[i]]$Par$step, angle=Par[[i]]$Par$angle,delta0 = Par[[i]]$delta),
+                            estAngleMean = list(angle=TRUE), beta0 = Par[[i]]$beta,
+                            stateNames = stateNames, 
+                            formula = formula[[i]])
+    model <- m.list[[i]]
+    file.out <- paste0("./Data_outputs/", paste0("F_mod_", i, ".RData"))
+    save(model, file = file.out)
+   }
 
 
 # FIND THE BEST MODEL -----------------------------------------------------
@@ -176,7 +198,7 @@ for (i in 1:length(formula)) {
   
   # Step length
   par(mfrow=c(1,1))
-  # ylimit <- qnorm((1 + 0.95)/2)/sqrt(length(pr$stepRes[!is.na(pr$stepRes)])) + 1
+ # ylimit <- qnorm((1 + 0.95)/2)/sqrt(length(pr$stepRes[!is.na(pr$stepRes)])) + 1
   acf(pr$stepRes[is.finite(pr$stepRes)],lag.max = 300)
   name.plot <- paste0("./Figures/", paste0("F_mod_", i, "_acf_step.png"))
   dev.copy(png, name.plot,  width = 800, height = 500)
@@ -209,7 +231,7 @@ for (i in 1:length(formula)) {
   name.plot <- paste0("./Figures/", paste0("F_mod_", i, "_acf_qq.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off() 
-  # extracting and plotting model coefficients for each transition
+    # extracting and plotting model coefficients for each transition
   beta.full <- CIbeta(m.list[[i]])$beta
   beta.full.est <- as.data.frame(beta.full$est)
   beta.full.upr <- as.data.frame(beta.full$upper)
@@ -240,6 +262,8 @@ for (i in 1:length(formula)) {
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off()
 }
+# note that warning messages appear ("removed containing missing values") due to upper and lower CIs which are sometimes "NA"
+# this happens when the estimate is zero or a really small number. Ignore here.
 
 all.out <- do.call(rbind, out.df)
 all.out <- all.out[order(all.out$AIC),]
@@ -247,4 +271,6 @@ all.out <- all.out[order(all.out$AIC),]
 # paste out AIC table
 out.path <- "./Data_outputs/AIC_table_F.csv"
 write.csv(all.out, out.path, row.names=T)
+
+
 

@@ -3,6 +3,7 @@ library(ggplot2); library(momentuHMM); library(plyr)
 
 # PLOT PREDICTED TRANSITION PROBABILITIES FOR WIND SPEEDS AND PERSONALITY
 
+
 # LOADING DATA --------------------------------------------------------------
 
 ## LOAD MODELS
@@ -16,6 +17,12 @@ f.best.mod <- model
 file.in <- paste0("./Data_outputs/", paste0("M_mod_", 6, ".RData"))
 load(file = file.in)
 m.best.mod <- model
+
+
+# LOAD DATA
+#gps <- data.table::fread(file = "./data/WAAL_gps_2010-2021_personality_wind.csv", na.strings = "NA")
+#gps <- gps[order(gps$Ring, gps$DateTime),]
+#gps <- gps[,-c(3:6)]
 
 
 # GET TRANSITION ESTIMATES - SPEED -------------------------------------------
@@ -32,7 +39,7 @@ cov.comb <- expand.grid(cov.ws, cov.pers)
 
 # FEMALES 
 cov.f_speed <- data.frame(WindSp=cov.comb$Var1, mean_BLUP_logit = cov.comb$Var2, LoD = "L", 
-                          WindDir = 75)
+                        WindDir = 75)
 cov.f_speed$LoD <- as.factor(as.character(cov.f_speed$LoD))
 cov.f_speed$WindSp <- as.numeric(as.character(cov.f_speed$WindSp))
 cov.f_speed$WindDir <- as.numeric(as.character(cov.f_speed$WindDir))
@@ -66,9 +73,9 @@ ub.f_speed <- lapply(ci.list_F,'[[',4)
 cov.ws <- seq(from = min(m.best.mod$data$WindSp), max(m.best.mod$data$WindSp), by = 0.2)
 cov.pers <- c(min(m.best.mod$data$mean_BLUP_logit), max(m.best.mod$data$mean_BLUP_logit))
 cov.comb <- expand.grid(cov.ws, cov.pers)
-
+ 
 cov.m_speed <- data.frame(WindSp=cov.comb$Var1, mean_BLUP_logit = cov.comb$Var2, LoD = "L", 
-                          WindDir = 75)
+                    WindDir = 75)
 cov.m_speed$LoD <- as.factor(as.character(cov.m_speed$LoD))
 cov.m_speed$WindSp <- as.numeric(as.character(cov.m_speed$WindSp))
 cov.m_speed$WindDir <- as.numeric(as.character(cov.m_speed$WindDir))
@@ -96,106 +103,6 @@ lb.m_speed <- lapply(ci.list_M,'[[',3)
 ub.m_speed <- lapply(ci.list_M,'[[',4)
 
 
-
-# STATS FOR MANUSCRIPT ----------------------------------------------------
-
-## Probability of landing for bold vs shy females
-
-# Get transition data
-state1 <- 2
-state2 <- 3
-nb_states = 3
-
-f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
-f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
-f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
-df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, 
-                   wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
-df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
-
-# Isolate probabilities
-subset(df.f, wind == 0.04510045)$mean[2] # bold; 0.1523472
-subset(df.f, wind == 0.04510045)$mean[1] # shy; 0.06222135
-
-
-
-## Search - search transitions
-
-# Get transition data
-state1 <- 2
-state2 <- 2
-nb_states = 3
-
-m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
-m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
-m.ub <- unlist(lapply(ub.m_speed,'[[',nb_states*(state2-1)+state1))
-df.m <- data.frame(sex = "M", pers = cov.m_speed$mean_BLUP_logit, 
-                   wind=cov.m_speed$WindSp, mean = m.means, lower_bound = m.lb, upper_bound = m.ub)
-df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1], "shy", "bold")
-
-
-f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
-f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
-f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
-df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, 
-                   wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
-df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
-
-all.df <- rbind(df.m, df.f)
-
-# Isolate probabilities
-subset(all.df, sex == "F" & wind == 0.04510045)$mean[2,] # bold = 0.6807008   0.6284974   0.7287347
-subset(all.df, sex == "F" & wind == 0.04510045)$mean[1,] # shy = 0.8521937 0.8273743   0.8739880 
-
-subset(all.df, sex == "F" & wind > 20.6)[2,] # bold = 0.8360646   0.7806669   0.8796278
-subset(all.df, sex == "F" & wind > 20.6)[1,] # shy = 0.7467889   0.6916119   0.7950195
-
-# Male values
-subset(all.df, sex == "M" & wind == 0.05049899)[2,] # bold = 0.777806   0.7346592   0.8156968
-subset(all.df, sex == "M" & wind == 0.05049899)[1,] # shy = 0.8376979   0.8046178   0.8661092
-
-subset(all.df, sex == "M" & wind > 24)[2,] # bold = 0.8215681   0.7636542   0.8677485
-subset(all.df, sex == "M" & wind > 24)[1,] # shy = 0.7344602    0.654671   0.8014064
-
-
-
-## Search - travel transitions
-
-# Get transition data
-state1 <- 2
-state2 <- 1
-nb_states = 3
-
-m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
-m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
-m.ub <- unlist(lapply(ub.m_speed,'[[',nb_states*(state2-1)+state1))
-df.m <- data.frame(sex = "M", pers = cov.m_speed$mean_BLUP_logit, 
-                   wind=cov.m_speed$WindSp, mean = m.means, lower_bound = m.lb, upper_bound = m.ub)
-df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1], "shy", "bold")
-
-
-f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
-f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
-f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
-df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, 
-                   wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
-df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
-
-all.df <- rbind(df.m, df.f)
-
-# Isolate probabilities
-subset(all.df, sex == "F" & wind == 0.04510045)[2,] # bold = 0.166952   0.1322787   0.2085297
-subset(all.df, sex == "F" & wind == 0.04510045)[1,] # shy = 0.08558499  0.06965287    0.104751
-
-subset(all.df, sex == "F" & wind > 20.6)[2,] # bold = 0.1343347  0.09417013   0.1880731
-subset(all.df, sex == "F" & wind > 20.6)[1,] # shy = 0.1845176   0.1416828   0.2367307
-
-# Male values
-subset(all.df, sex == "M" & wind == 0.05049899)[2,] # bold = 0.1426522   0.1107547   0.1818573
-subset(all.df, sex == "M" & wind == 0.05049899)[1,] # shy = 0.051035  0.03928624  0.06605572
-
-subset(all.df, sex == "M" & wind > 24)[2,] # bold = 0.1163733   0.0791493   0.1679117
-subset(all.df, sex == "M" & wind > 24)[1,] # shy = 0.2389782   0.1731958   0.3200735
 
 
 
@@ -228,12 +135,12 @@ for (i in 1:3) {
     
     ### FEMALE COEFFICIENTS
     
-    f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
-    f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
-    f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
-    df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, 
+   f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
+   f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
+   f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
+   df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, 
                        wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
-    df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
+   df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
     
     ### COMBINE DATAFRAMES
     
@@ -267,11 +174,11 @@ for (i in 1:3) {
     
     if (i == j) { dirPlot <- dirPlot + scale_y_continuous(breaks = scales::pretty_breaks(n = 5), limits = c(0.5, 1)) } else {
       dirPlot <- dirPlot + scale_y_continuous(breaks = scales::pretty_breaks(n = 5), limits = c(0, 0.5))  }
-    
+      
     assign(paste0("speedPlot_", i, "_", j), dirPlot)
     
     png(paste0("Figures/Transition Estimates/SPEED_", behaviour$filename[i], "_", behaviour$filename[j],".png"), 
-        width = 9, height = 7, units = "in", res = 350)
+       width = 9, height = 7, units = "in", res = 350)
     print(dirPlot)
     dev.off()
     
@@ -356,6 +263,133 @@ lb.m_speed <- lapply(ci.list_M_bydir,'[[',3)
 ub.m_speed <- lapply(ci.list_M_bydir,'[[',4)
 
 
+# STATS FOR MANUSCRIPT ----------------------------------------------------
+
+## Rest - search transitions
+
+# Get transition data
+state1 <- 3
+state2 <- 2
+nb_states = 3
+
+m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
+m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
+m.ub <- unlist(lapply(ub.m_speed,'[[',nb_states*(state2-1)+state1))
+df.m <- data.frame(sex = "M", pers = cov.m_speed$mean_BLUP_logit, dir = cov.m_speed$WindDir,
+                   wind=cov.m_speed$WindSp, mean = m.means, lower_bound = m.lb, upper_bound = m.ub)
+df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1], "shy", "bold")
+
+
+f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
+f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
+f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
+df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, dir = cov.f_speed$WindDir,
+                   wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
+df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
+
+all.df <- rbind(df.m, df.f)
+
+
+# Isolate probabilities
+subset(all.df, sex == "F" & dir == 180 & wind ==  min(subset(all.df, sex == "F")$wind))[1,] # low = 0.1066338  0.08520636   0.1326683     shy
+subset(all.df, sex == "F" & dir == 180 & wind ==  max(subset(all.df, sex == "F")$wind))[1,] # high = 0.2305976   0.1689537   0.3064392     shy
+
+subset(all.df, sex == "F" & dir == 180 & wind ==  min(subset(all.df, sex == "F")$wind))[2,] # low = 0.165563    0.127179   0.2127083    bold
+subset(all.df, sex == "F" & dir == 180 & wind ==  max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1919329   0.1258836   0.2814778    bold
+
+
+# Male values
+subset(all.df, sex == "M" & dir == 180 & wind ==  min(subset(all.df, sex == "M")$wind))[1,] # low = 0.1473849   0.1182203   0.1822573     shy
+subset(all.df, sex == "M" & dir == 180 & wind ==  max(subset(all.df, sex == "M")$wind))[1,] # high = 0.2140871   0.1247433   0.3423888     shy
+
+subset(all.df, sex == "M" & dir == 180 & wind ==  min(subset(all.df, sex == "M")$wind))[2,] # high = 0.1114218  0.08683227   0.1418928   
+subset(all.df, sex == "M" & dir == 180 & wind ==  max(subset(all.df, sex == "M")$wind))[2,] # low = 0.1652692  0.09349768   0.2753971    bold
+
+
+
+
+## Search - travel transitions
+
+# Get transition data
+state1 <- 2
+state2 <- 1
+nb_states = 3
+
+m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
+m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
+m.ub <- unlist(lapply(ub.m_speed,'[[',nb_states*(state2-1)+state1))
+df.m <- data.frame(sex = "M", pers = cov.m_speed$mean_BLUP_logit, dir = cov.m_speed$WindDir,
+                   wind=cov.m_speed$WindSp, mean = m.means, lower_bound = m.lb, upper_bound = m.ub)
+df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1], "shy", "bold")
+
+
+f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
+f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
+f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
+df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, dir = cov.f_speed$WindDir,
+                   wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
+df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
+
+all.df <- rbind(df.m, df.f)
+
+# Isolate probabilities
+subset(all.df, sex == "F" & dir == 180 & wind ==  min(subset(all.df, sex == "F")$wind))[1,] # low = 0.09323681   0.0757844   0.1142117     shy
+subset(all.df, sex == "F" & dir == 180 & wind ==  max(subset(all.df, sex == "F")$wind))[1,] # high = 0.1995975   0.1535666   0.2552649     shy
+
+subset(all.df, sex == "F" & dir == 180 & wind ==  min(subset(all.df, sex == "F")$wind))[2,] # low =  0.1838433   0.1459631   0.2289191    bold
+subset(all.df, sex == "F" & dir == 180 & wind ==  max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1448276    0.101706   0.2021184    bold
+
+
+# Male values
+subset(all.df, sex == "M" & dir == 180 & wind ==  min(subset(all.df, sex == "M")$wind))[1,] # low =  0.05577518  0.04281957  0.07235435     shy
+subset(all.df, sex == "M" & dir == 180 & wind ==  max(subset(all.df, sex == "M")$wind))[1,] # high = 0.3070312   0.2006025   0.4389219     shy
+
+subset(all.df, sex == "M" & dir == 180 & wind ==  min(subset(all.df, sex == "M")$wind))[2,] # low = 0.1535877   0.1192771   0.1955761    bold
+subset(all.df, sex == "M" & dir == 180 & wind ==  max(subset(all.df, sex == "M")$wind))[2,] # high = 0.09983382  0.05858481   0.1650345    bold
+
+
+## Travel - search transitions
+
+# Get transition data
+state1 <- 1
+state2 <- 2
+nb_states = 3
+
+m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
+m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
+m.ub <- unlist(lapply(ub.m_speed,'[[',nb_states*(state2-1)+state1))
+df.m <- data.frame(sex = "M", pers = cov.m_speed$mean_BLUP_logit, dir = cov.m_speed$WindDir,
+                   wind=cov.m_speed$WindSp, mean = m.means, lower_bound = m.lb, upper_bound = m.ub)
+df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1], "shy", "bold")
+
+
+f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
+f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
+f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
+df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, dir = cov.f_speed$WindDir,
+                   wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
+df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
+
+all.df <- rbind(df.m, df.f)
+
+# Isolate probabilities
+subset(all.df, sex == "F" & dir == 0 & wind ==  min(subset(all.df, sex == "F")$wind))[1,] # low = 0.1388584   0.1159332   0.1654686     shy
+subset(all.df, sex == "F" & dir == 0 & wind ==  max(subset(all.df, sex == "F")$wind))[1,] # high = 0.103329  0.08051051   0.1316886     shy
+
+subset(all.df, sex == "F" & dir == 0 & wind ==  min(subset(all.df, sex == "F")$wind))[2,] # low = 0.1256671  0.09206856   0.1692412    bold
+subset(all.df, sex == "F" & dir == 0 & wind ==  max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1243336  0.09902084   0.1550039    bold
+
+# Male values
+subset(all.df, sex == "M" & dir == 0 & wind ==  min(subset(all.df, sex == "M")$wind))[1,] # low =  0.1354298   0.1102486    0.165294     shy
+subset(all.df, sex == "M" & dir == 0 & wind ==  max(subset(all.df, sex == "M")$wind))[1,] # high = 0.1901425   0.1240988   0.2800944     shy
+
+subset(all.df, sex == "M" & dir == 0 & wind ==  min(subset(all.df, sex == "M")$wind))[2,] # low = 0.04271847  0.02610382  0.06915713    bold
+subset(all.df, sex == "M" & dir == 0 & wind ==  max(subset(all.df, sex == "M")$wind))[2,] # high =  0.1433595   0.1153959   0.1767454    bold
+
+
+
+
+
 # PLOT SPEED TRANSTIONS FOR CROSS/HEAD/TAIL WIND  --------------------------------------------
 
 shy_col <- "#00DD2F"
@@ -368,86 +402,86 @@ nb_states = 3
 labels <- c(F = "Female", M = "Male")
 
 for(k in 1:3){
-  
-  for (i in 1:3) {
     
-    for (j in 1:3) {
+    for (i in 1:3) {
       
-      wind <- k; print(k)
-      
-      state1 <- i; print(i)
-      state2 <- j; print(j) 
-      
-      ### MALE COEFFECIENTS
-      m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
-      m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
-      m.ub <- unlist(lapply(ub.m_speed,'[[',nb_states*(state2-1)+state1))
-      df.m <- data.frame(sex = "M", pers = cov.m_speed$mean_BLUP_logit, dir = cov.m_speed$WindDir,
-                         wind=cov.m_speed$WindSp, mean = m.means, lower_bound = m.lb, upper_bound = m.ub)
-      df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1], "shy", "bold")
-      df.m$windCat <- ifelse(df.m$dir == 0, "tail", "cross")
-      df.m$windCat <- ifelse(df.m$dir == 180, "head", as.character(df.m$windCat))
-      
-      ### FEMALE COEFFICIENTS
-      
-      f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
-      f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
-      f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
-      df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, dir = cov.f_speed$WindDir,
-                         wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
-      df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
-      df.f$windCat <- ifelse(df.f$dir == 0, "tail", "cross")
-      df.f$windCat <- ifelse(df.f$dir == 180, "head", as.character(df.f$windCat))
-      
-      ### COMBINE DATAFRAMES
-      
-      all.df <- rbind(df.m, df.f)
-      all.df$sex <- as.factor(as.character(all.df$sex))
-      all.df$persCat <- as.factor(as.character(all.df$persCat))
-      all.df <- subset(all.df, windCat == unique(all.df$windCat)[k])
-      
-      ### BUILD PLOT
-      
-      dirPlot <- ggplot(all.df, aes(x = wind, y=mean)) + facet_wrap(~sex, labeller=labeller(sex=labels)) +
-        geom_ribbon(size = 1, linetype = "blank", aes(ymin=lower_bound, ymax=upper_bound, col = persCat), alpha=0.15) + 
-        geom_line(size = 1, aes(col = persCat, linetype = persCat)) + 
-        theme_bw() + ylab("Transition probability") +
-        scale_x_continuous(limits=c(0, 23)) +
-        xlab("Wind speed (ms-1)") +
-        theme(axis.text.x=element_text(size=15), 
-              #axis.text.x=element_blank(),
-              axis.title.x=element_text(size = 16),
-              #axis.title.x=element_blank(),
-              axis.text.y=element_text(size=15), 
-              #axis.title.y = element_blank(),
-              #axis.text.y = element_blank(),
-              axis.title.y=element_text(size = 16),
-              strip.text.x = element_text(size = 16),
-              panel.grid.minor = element_blank(),
-              panel.grid.major = element_blank(),
-              strip.placement = "outside",
-              strip.background = element_blank(),
-              plot.title = element_text(hjust = 0.5),
-              #legend.position = c(0.06,0.9)) +
-              legend.position = "none") +
-        scale_linetype_manual(name = "Personality", values=c("solid", "dashed"), labels = c("Bold", "Shy")) +
-        scale_color_manual(name = "Personality", labels = c("Bold", "Shy"), values = c(bold_col, shy_col)) +
-        ggtitle(paste0(behaviour$state[i], " - > ", behaviour$state[j]))
-      
-      if (i == j) { dirPlot <- dirPlot + scale_y_continuous(breaks = scales::pretty_breaks(n = 5), limits = c(0.5, 1)) } else {
-        dirPlot <- dirPlot + scale_y_continuous(breaks = scales::pretty_breaks(n = 5), limits = c(0, 0.5))  }
-      
-      assign(paste0("speedPlot_", i, "_", j), dirPlot)
-      
-      png(paste0("Figures/Transition Estimates/By_wind/SPEED_", behaviour$filename[i], " to ", behaviour$filename[j], " in ", unique(all.df$windCat), "wind.png"), 
-          width = 9, height = 7, units = "in", res = 350)
-      print(dirPlot)
-      dev.off()
+      for (j in 1:3) {
+        
+        wind <- k; print(k)
+        
+        state1 <- i; print(i)
+        state2 <- j; print(j) 
+        
+        ### MALE COEFFECIENTS
+        m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
+        m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
+        m.ub <- unlist(lapply(ub.m_speed,'[[',nb_states*(state2-1)+state1))
+        df.m <- data.frame(sex = "M", pers = cov.m_speed$mean_BLUP_logit, dir = cov.m_speed$WindDir,
+                           wind=cov.m_speed$WindSp, mean = m.means, lower_bound = m.lb, upper_bound = m.ub)
+        df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1], "shy", "bold")
+        df.m$windCat <- ifelse(df.m$dir == 0, "tail", "cross")
+        df.m$windCat <- ifelse(df.m$dir == 180, "head", as.character(df.m$windCat))
+        
+        ### FEMALE COEFFICIENTS
+        
+        f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
+        f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
+        f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
+        df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, dir = cov.f_speed$WindDir,
+                           wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
+        df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
+        df.f$windCat <- ifelse(df.f$dir == 0, "tail", "cross")
+        df.f$windCat <- ifelse(df.f$dir == 180, "head", as.character(df.f$windCat))
+        
+        ### COMBINE DATAFRAMES
+        
+        all.df <- rbind(df.m, df.f)
+        all.df$sex <- as.factor(as.character(all.df$sex))
+        all.df$persCat <- as.factor(as.character(all.df$persCat))
+        all.df <- subset(all.df, windCat == unique(all.df$windCat)[k])
+        
+        ### BUILD PLOT
+        
+        dirPlot <- ggplot(all.df, aes(x = wind, y=mean)) + facet_wrap(~sex, labeller=labeller(sex=labels)) +
+          geom_ribbon(size = 1, linetype = "blank", aes(ymin=lower_bound, ymax=upper_bound, col = persCat), alpha=0.15) + 
+          geom_line(size = 1, aes(col = persCat, linetype = persCat)) + 
+          theme_bw() + ylab("Transition probability") +
+          scale_x_continuous(limits=c(0, 23)) +
+          xlab("Wind speed (ms-1)") +
+          theme(axis.text.x=element_text(size=15), 
+                #axis.text.x=element_blank(),
+                axis.title.x=element_text(size = 16),
+                #axis.title.x=element_blank(),
+                axis.text.y=element_text(size=15), 
+                #axis.title.y = element_blank(),
+                #axis.text.y = element_blank(),
+                axis.title.y=element_text(size = 16),
+                strip.text.x = element_text(size = 16),
+                panel.grid.minor = element_blank(),
+                panel.grid.major = element_blank(),
+                strip.placement = "outside",
+                strip.background = element_blank(),
+                plot.title = element_text(hjust = 0.5),
+                #legend.position = c(0.06,0.9)) +
+                legend.position = "none") +
+          scale_linetype_manual(name = "Personality", values=c("solid", "dashed"), labels = c("Bold", "Shy")) +
+          scale_color_manual(name = "Personality", labels = c("Bold", "Shy"), values = c(bold_col, shy_col)) +
+          ggtitle(paste0(behaviour$state[i], " - > ", behaviour$state[j]))
+        
+        if (i == j) { dirPlot <- dirPlot + scale_y_continuous(breaks = scales::pretty_breaks(n = 5), limits = c(0.5, 1)) } else {
+          dirPlot <- dirPlot + scale_y_continuous(breaks = scales::pretty_breaks(n = 5), limits = c(0, 0.5))  }
+        
+        assign(paste0("speedPlot_", i, "_", j), dirPlot)
+       
+        png(paste0("Figures/Transition Estimates/By_wind/SPEED_", behaviour$filename[i], " to ", behaviour$filename[j], " in ", unique(all.df$windCat), "wind.png"), 
+            width = 9, height = 7, units = "in", res = 350)
+        print(dirPlot)
+        dev.off()
+        
+      }
       
     }
-    
-  }
-  
+
 }
 
 
@@ -460,11 +494,11 @@ for(k in 1:3){
 ### Travel/travel + Travel/search
 
 speedsplot_1_1b <- speedsplot_1_1 + theme(axis.text.x=element_blank(), 
-                                          axis.title.x=element_blank(),
-                                          axis.ticks.x=element_blank(),
-                                          axis.title.y=element_text(size = 14, face = "plain"),
-                                          title = element_text(size = 16, face = "italic"),
-                                          legend.position = c(0.1,0.87))
+                       axis.title.x=element_blank(),
+                       axis.ticks.x=element_blank(),
+                       axis.title.y=element_text(size = 14, face = "plain"),
+                       title = element_text(size = 16, face = "italic"),
+                       legend.position = c(0.1,0.87))
 
 speedsplot_1_2b <- speedsplot_1_2 + theme(title = element_text(size = 16, face = "italic"), 
                                           axis.title.y=element_text(size = 14, face = "plain"),
@@ -534,7 +568,7 @@ cov.pers <- c(min(f.best.mod$data$mean_BLUP_logit), max(f.best.mod$data$mean_BLU
 cov.comb <- expand.grid(cov.wd, cov.pers)
 
 cov.f_dir <- data.frame(WindDir=cov.comb$Var1, mean_BLUP_logit = cov.comb$Var2, LoD = "L", 
-                        WindSp = 9, sex = "F")
+                    WindSp = 9, sex = "F")
 cov.f_dir$LoD <- as.factor(as.character(cov.f_dir$LoD))
 cov.f_dir$WindSp <- as.numeric(as.character(cov.f_dir$WindSp))
 cov.f_dir$WindDir <- as.numeric(as.character(cov.f_dir$WindDir))
@@ -566,7 +600,7 @@ cov.pers <- c(min(m.best.mod$data$mean_BLUP_logit), max(m.best.mod$data$mean_BLU
 cov.comb <- expand.grid(cov.wd, cov.pers)
 
 cov.m_dir <- data.frame(WindDir=cov.comb$Var1, mean_BLUP_logit = cov.comb$Var2, LoD = "L", 
-                        WindSp = 9)
+                    WindSp = 9)
 cov.m_dir$LoD <- as.factor(as.character(cov.m_dir$LoD))
 cov.m_dir$WindSp <- as.numeric(as.character(cov.m_dir$WindSp))
 cov.m_dir$WindDir <- as.numeric(as.character(cov.m_dir$WindDir))
@@ -630,7 +664,7 @@ for (i in 1:3) {
     all.df$sex <- as.factor(as.character(all.df$sex))
     all.df$persCat <- as.factor(as.character(all.df$persCat))
     
-    
+  
     ### BUILD PLOT
     
     dirPlot <- ggplot(all.df, aes(x = dir, y=mean)) + facet_wrap(~sex, labeller=labeller(sex=labels)) +
@@ -653,7 +687,7 @@ for (i in 1:3) {
             legend.position = c(0.06,0.9)) +
       scale_color_manual(name = "Personality", labels = c("Bold", "Shy"), values = c(bold_col, shy_col)) +
       ggtitle(paste0(behaviour$state[i], " - > ", behaviour$state[j]))
-    
+
     if (i == j) { dirPlot <- dirPlot + scale_y_continuous(breaks = scales::pretty_breaks(n = 5), limits = c(0.5, 1)) } else {
       dirPlot <- dirPlot + scale_y_continuous(breaks = scales::pretty_breaks(n = 5), limits = c(0, 0.5))  }
     
@@ -674,16 +708,16 @@ for (i in 1:3) {
 ### Travel/travel + Travel/search
 
 dirPlot_1_1b <- dirPlot_1_1 + theme(axis.text.x=element_blank(), 
-                                    axis.title.x=element_blank(),
-                                    axis.ticks.x=element_blank(),
-                                    axis.title.y=element_text(size = 14, face = "plain"),
-                                    title = element_text(size = 16, face = "italic"),
-                                    legend.position = c(0.1,0.12))
+                                          axis.title.x=element_blank(),
+                                          axis.ticks.x=element_blank(),
+                                          axis.title.y=element_text(size = 14, face = "plain"),
+                                          title = element_text(size = 16, face = "italic"),
+                                          legend.position = c(0.1,0.12))
 
 dirPlot_1_2b <- dirPlot_1_2 + theme(title = element_text(size = 16, face = "italic"), 
-                                    axis.title.y=element_text(size = 14, face = "plain"),
-                                    axis.title.x=element_text(size = 14, face = "plain"),
-                                    legend.position = "none")
+                                          axis.title.y=element_text(size = 14, face = "plain"),
+                                          axis.title.x=element_text(size = 14, face = "plain"),
+                                          legend.position = "none")
 
 png("Figures/transitions_direction_travel.png", width = 9, height = 13, units = "in", res = 350)
 gridExtra::grid.arrange(dirPlot_1_1b, dirPlot_1_2b, nrow = 2)
@@ -693,16 +727,16 @@ dev.off()
 ### Rest/rest + Rest/search
 
 dirPlot_3_3b <- dirPlot_3_3 + theme(axis.text.x=element_blank(), 
-                                    axis.title.x=element_blank(),
-                                    axis.ticks.x=element_blank(),
-                                    axis.title.y=element_text(size = 14, face = "plain"),
-                                    title = element_text(size = 16, face = "italic"),
-                                    legend.position = c(0.1,0.12))
+                                          axis.title.x=element_blank(),
+                                          axis.ticks.x=element_blank(),
+                                          axis.title.y=element_text(size = 14, face = "plain"),
+                                          title = element_text(size = 16, face = "italic"),
+                                          legend.position = c(0.1,0.12))
 
 dirPlot_3_2b <- dirPlot_3_2 + theme(title = element_text(size = 16, face = "italic"), 
-                                    axis.title.y=element_text(size = 14, face = "plain"),
-                                    axis.title.x=element_text(size = 14, face = "plain"),
-                                    legend.position = "none")
+                                          axis.title.y=element_text(size = 14, face = "plain"),
+                                          axis.title.x=element_text(size = 14, face = "plain"),
+                                          legend.position = "none")
 
 png("Figures/transitions_direction_rest.png", width = 9, height = 13, units = "in", res = 350)
 gridExtra::grid.arrange(dirPlot_3_3b, dirPlot_3_2b, nrow = 2)
@@ -712,23 +746,23 @@ dev.off()
 ### Search/Search + Search/travel + Search/rest
 
 dirPlot_2_2b <- dirPlot_2_2 + theme(axis.text.x=element_blank(), 
-                                    axis.title.x=element_blank(),
-                                    axis.ticks.x=element_blank(),
-                                    axis.title.y=element_text(size = 14, face = "plain"),
-                                    title = element_text(size = 16, face = "italic"),
-                                    legend.position = "none")
+                                        axis.title.x=element_blank(),
+                                        axis.ticks.x=element_blank(),
+                                        axis.title.y=element_text(size = 14, face = "plain"),
+                                        title = element_text(size = 16, face = "italic"),
+                                        legend.position = "none")
 
 dirPlot_2_1b <- dirPlot_2_1 + theme(axis.text.x=element_blank(), 
-                                    axis.title.x=element_blank(),
-                                    axis.ticks.x=element_blank(),
+                                          axis.title.x=element_blank(),
+                                          axis.ticks.x=element_blank(),
                                     title = element_text(size = 16, face = "italic"),
-                                    axis.title.y=element_text(size = 14, face = "plain"),
-                                    legend.position = c(0.1,0.12))
+                                          axis.title.y=element_text(size = 14, face = "plain"),
+                                          legend.position = c(0.1,0.12))
 
 dirPlot_2_3b <- dirPlot_2_3 + theme(title = element_text(size = 16, face = "italic"), 
-                                    axis.title.y=element_text(size = 14, face = "plain"),
-                                    axis.title.x=element_text(size = 14, face = "plain"),
-                                    legend.position = "none")
+                                          axis.title.y=element_text(size = 14, face = "plain"),
+                                          axis.title.x=element_text(size = 14, face = "plain"),
+                                          legend.position = "none")
 
 png("Figures/transitions_dir_search.png", width = 9, height = 19, units = "in", res = 350)
 gridExtra::grid.arrange(dirPlot_2_1b, dirPlot_2_2b, dirPlot_2_3b, nrow = 3)
@@ -810,6 +844,24 @@ all.df$sex <- as.factor(as.character(all.df$sex))
 all.df$persCat <- as.factor(as.character(all.df$persCat))
 all.df$wind_cat <- as.factor(as.character(all.df$wind_cat))
 
+#### 3C. SUMMARIZING PROBABILITIES FOR EACH WIND SPEED CATEGORY #####
+
+wind_sum <- ddply(all.df,.(sex, persCat, wind_cat), summarize, p_mean = mean(mean), p_low = mean(lower_bound), p_upp = mean(upper_bound))
+wind_sum
+
+#sex persCat wind_cat     p_mean      p_low     p_upp
+#1    F    bold        1 0.12711290 0.10380481 0.1549509
+#2    F    bold        2 0.13457983 0.11544147 0.1565864
+#3    F    bold        3 0.14280073 0.10071440 0.1989502
+#4    F     shy        1 0.08730731 0.07390367 0.1029756
+#5    F     shy        2 0.11845437 0.10458778 0.1339940
+#6    F     shy        3 0.15996066 0.12248736 0.2063342
+#7    M    bold        1 0.09042912 0.07466018 0.1092489
+#8    M    bold        2 0.10972580 0.09668435 0.1243555
+#9    M    bold        3 0.13924614 0.10274351 0.1864673
+#10   M     shy        1 0.11551333 0.09726525 0.1367724
+#11   M     shy        2 0.12257189 0.10918712 0.1374217
+#12   M     shy        3 0.13211267 0.09935198 0.1740557
 
 
 
