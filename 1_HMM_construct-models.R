@@ -19,15 +19,6 @@ gps$DateTime <- NULL
 gps[,c(1,2,3,8,9)] <- lapply(gps[,c(1,2,3,8,9)], as.factor)
 gps[,c(4:7,10)] <- lapply(gps[,c(4:7,10)], as.numeric)
 
-# Some NA wind directions - at end of trip, don't know bearing
-gps <- subset(gps, !is.na(WindDir))
-
-## Sample sizes
-nlevels(gps$Ring) # 294 individuals
-tripz <- gps %>% dplyr::group_by(Ring, Year) %>% dplyr::summarise(trips = length(unique(ID)))
-sum(tripz$trips) # 510 trips
-mean(tripz$trips, na.rm=T) # mean 1.3 trips per individual
-
 
 
 # INITIALISE HMM DATA ---------------------------------------------------------
@@ -35,6 +26,9 @@ mean(tripz$trips, na.rm=T) # mean 1.3 trips per individual
 dat_OG <- prepData(gps, type= "LL", # longs and lats
                coordNames = c("Longitude", "Latitude")) ## these are our names
 head(dat_OG)
+
+# Some NA wind directions - at end of trip, don't know bearing
+gps <- subset(gps, !is.na(WindDir))
 
 ## Remove weird step lengths
 hist(dat_OG$step)
