@@ -1,3 +1,5 @@
+### CITATION: This code is modified from scripts shared in Clay et al. 2020, J. Anim. Ecol.
+
 ### AIM: Run HMM combinations based on wind and personality predictors; use AIC to identify the best model
 
 
@@ -5,19 +7,24 @@
 
 library(momentuHMM); library(ggplot2); library(dplyr)
 
-source("Functions/gps_functions.R")
+### Create outputs folder
+out.path <- "./Data_outputs/"
+if(dir.exists(out.path) == FALSE){
+  dir.create(out.path)
+}
 
-### LOAD IN TRACKS ####
 
-gps <- read.csv(file = "./data/WAAL_gps_2010-2021_personality_wind.csv", na.strings = "NA")
+### LOAD IN TRACKS
+
+gps <- read.csv(file = "./Data_inputs/WAAL_GPS_2010-2021_personality_wind.csv", na.strings = "NA")
 names(gps)[10] <- "ID"
 names(gps)[8] <- "WindDir"
 gps <- gps[order(gps$ID, gps$DateTime),]
 gps$DateTime <- NULL
 
 ## Isolate columns and specify types
-gps[,c(1,2,3,8,9)] <- lapply(gps[,c(1,2,3,8,9)], as.factor)
-gps[,c(4:7,10)] <- lapply(gps[,c(4:7,10)], as.numeric)
+gps[,c(1,2,3,8,9)] <- lapply(gps[,c(1,2,3,8,9)], as.factor) # ring, sex, year, LoD, ID
+gps[,c(4:7,10)] <- lapply(gps[,c(4:7,10)], as.numeric) # Longitude, Latitude, WindSp, WindDir
 
 
 
@@ -27,30 +34,28 @@ dat_OG <- prepData(gps, type= "LL", # longs and lats
                coordNames = c("Longitude", "Latitude")) ## these are our names
 head(dat_OG)
 
-# Some NA wind directions - at end of trip, don't know bearing
+# Some NA wind directions, because we don't have bearings for the last fix of the trip
 gps <- subset(gps, !is.na(WindDir))
 
-## Remove weird step lengths
+# Remove errorneous step lengths
 hist(dat_OG$step)
 nrow(subset(dat_OG, step > 40))/nrow(dat_OG)
 dat_OG <- subset(dat_OG, step < 40)
 
-## Assign step lengths based on previously identified initial values
+### NOTE: Initial value finding code taken from Clay et al. 2020
 
+## Assign step lengths based on previously identified initial values
 shape_0 <- c(12.42, 4.10, 0.33)
 scale_0 <- c(3.62, 4.71, 0.17)
 stepPar0 <- c(shape_0,scale_0)
 
-## Assigning turning angles based on initial value finding code
-
+## Assigning turning angles based on previously identified initial values
 location_0 <- c(0.00302, 0.00343, 0.0291)
 concentration_0 <- c(50.79, 1.27, 44.02)
 anglePar0 <- c(location_0,concentration_0)
 
 
-### Dealing with zeros
-
-# Set 0s to very small numbers (zero par gives strange pseudo-residuals)
+### Set 0s to very small numbers 
 dat <- dat_OG
 
 ind_zero <- which(dat$step == 0)
@@ -108,8 +113,6 @@ acf(dat$step[!is.na(dat$step)], lag.max = 300)
 ### CURRENTLY RUNNING FOR FEMALES ###
 
 ## Set up personality formulae 
-# Split data by sex, use Tommy's best model as basis
-# WindSp:Sex + WindSp + Sex + LoD + WindDir + WindSp:Sex:WindDir + WindSp:WindDir
 
 formula <- list()	
 formula[[2]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir + WindSp:WindDir
@@ -167,7 +170,7 @@ for (i in 2:length(formula)) {
 
 # FIND THE BEST MODEL -----------------------------------------------------
 
-# iterate through each model set, load in models, output autocorrelation plots for step lenghts and turning angles, pseudo-residual 
+# Iterate through each model set, load in models, output autocorrelation plots for step lengths and turning angles, pseudo-residual 
 # and qq plots, extract model coefficients for each transition and plot, and paste out AIC table
 
 # Specifying output lists of length formula
@@ -176,7 +179,7 @@ out.df <- vector(mode = "list", length =length(formula))
 
 for (i in 1:length(formula)) {
   print(i)
-  par(mar=c(1,1,1,1)) # in case you have problems with the margins of the plots, this is a quick way to fix it. 
+  
   file.in <- paste0("./Data_outputs/", paste0("F_mod_", i, ".RData"))
   load(file = file.in)
   if (i == 1) { m.list[[i]] <- m1_F} else { m.list[[i]] <- model}
@@ -192,7 +195,7 @@ for (i in 1:length(formula)) {
   
   # Step length
   par(mfrow=c(1,1))
- # ylimit <- qnorm((1 + 0.95)/2)/sqrt(length(pr$stepRes[!is.na(pr$stepRes)])) + 1
+  ylimit <- qnorm((1 + 0.95)/2)/sqrt(length(pr$stepRes[!is.na(pr$stepRes)])) + 1
   acf(pr$stepRes[is.finite(pr$stepRes)],lag.max = 300)
   name.plot <- paste0("./Figures/", paste0("F_mod_", i, "_acf_step.png"))
   dev.copy(png, name.plot,  width = 800, height = 500)
@@ -225,7 +228,8 @@ for (i in 1:length(formula)) {
   name.plot <- paste0("./Figures/", paste0("F_mod_", i, "_acf_qq.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off() 
-    # extracting and plotting model coefficients for each transition
+  
+  # extracting and plotting model coefficients for each transition
   beta.full <- CIbeta(m.list[[i]])$beta
   beta.full.est <- as.data.frame(beta.full$est)
   beta.full.upr <- as.data.frame(beta.full$upper)
@@ -256,13 +260,13 @@ for (i in 1:length(formula)) {
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off()
 }
-# note that warning messages appear ("removed containing missing values") due to upper and lower CIs which are sometimes "NA"
-# this happens when the estimate is zero or a really small number. Ignore here.
+
+# Warning messages appear ("removed containing missing values") due to upper and lower CIs which are sometimes "NA"
 
 all.out <- do.call(rbind, out.df)
 all.out <- all.out[order(all.out$AIC),]
 
-# paste out AIC table
+# Print out AIC table
 out.path <- "./Data_outputs/AIC_table_F.csv"
 write.csv(all.out, out.path, row.names=T)
 

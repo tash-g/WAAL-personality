@@ -1,8 +1,23 @@
-# AIM OF SCRIPT - to plot predicted stationary probabilities for a range of specified covariates 
+### CITATION: This code is modified from scripts shared in Clay et al. 2020, J. Anim. Ecol.
 
+### AIM: lot predicted stationary probabilities for a range of specified covariates 
+
+
+# PREAMBLE ----------------------------------------------------------------
 
 library(ggplot2); library(momentuHMM)
-source("Functions/gps_functions.R")
+
+### Create outputs and figures folders if they don't currently exist
+out.path <- "./Data_outputs/"
+if(dir.exists(out.path) == FALSE){
+  dir.create(out.path)
+}
+
+figures.path <- "./Figures/"
+if(dir.exists(figures.path) == FALSE){
+  dir.create(figures.path)
+}
+
 
 ci.stationary <- function(model, cov, alpha) {
   gridLength <- nrow(cov)
@@ -66,7 +81,7 @@ ci.stationary <- function(model, cov, alpha) {
 
 # LOAD MODEL OUTPUTS ------------------------------------------------------
 
-# load in best models for males and females
+# load in best models for males and females (based on AIC table)
 file.in <- paste0("./Data_outputs/", paste0("F_mod_", 8, ".RData"))
 load(file = file.in)
 f.mod <- model
@@ -85,7 +100,7 @@ min(m.mod$data$WindSp) # 0.05
 max(m.mod$data$WindSp) # 24.2
 
 ## Predict wind speed for average wind direction which is 75 degrees relative to bird direction, 
-#and for daylight hours when birds are most active
+## and for daylight hours when birds are most active
 
 # Get covariate data
 ws.f <- seq(from=0.05, 20, by = 0.2)
@@ -159,7 +174,7 @@ ggplot(stat.df, aes(WindSp, prob)) + facet_wrap(.~sex, labeller=label_value) +
   scale_linetype_manual(values=c("solid", "dotted", "dashed"),labels = c("Travel", "Search", "Rest"), name = "Behaviour") +
   ylim(0, 1) +
   scale_color_manual(name = "", labels = c("Bold", "Shy"), values = c(bold_col, shy_col)) +
-  theme_bw() + #ylab("Stationary probability")+
+  theme_bw() + ylab("Stationary probability")+
   scale_x_continuous(limits=c(0, 23)) + xlab(expression(paste("Wind speed (", ms^-1, ")", sep=""))) +
   theme(axis.text.x=element_text(size=16), 
         axis.text.y=element_text(size=16), 
@@ -174,7 +189,7 @@ dev.off()
 
 
 
-# CALCULATE STATIONARY PROBABILITIES FOR EACH WIND DIRECTION -------------------
+# CALCULATE STATIONARY PROBABILITIES BY SPEED FOR TAILWIND/CROSSWIND/HEADWIND -------------------
 
 # Get covariate data
 ws.f <- seq(from=0.05, 20, by = 0.2)
@@ -236,7 +251,7 @@ load("Data_output/stationary_probabilities_DIR.RData")
 
 
 
-# PLOT STATIONARY PROBABILITIES BY SPEED FOR EACH WIND DIRECTION (FIGURE S4) ----------
+# FIGURE S4: PLOT STATIONARY PROBABILITIES BY SPEED FOR TAILWIND/CROSSWIND/HEADWIND ----------
 
 shy_col <- "#00DD2F"
 bold_col <- "purple"
@@ -256,7 +271,7 @@ for (i in 1:length(dirs)){
     scale_linetype_manual(values=c("solid", "dotted", "dashed"),labels = c("Travel", "Search", "Rest"), name = "Behaviour") +
     ylim(0, 1) +
     scale_color_manual(name = "", labels = c("Bold", "Shy"), values = c(bold_col, shy_col)) +
-    theme_bw() + #ylab("Stationary probability")+
+    theme_bw() + ylab("Stationary probability")+
     scale_x_continuous(limits=c(0, 23)) + xlab(expression(paste("Wind speed (", ms^-1, ")", sep="")))+
     theme(axis.text.x=element_text(size=16), 
           axis.text.y=element_text(size=16), 

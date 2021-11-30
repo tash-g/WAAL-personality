@@ -1,10 +1,22 @@
+### CITATION: This code is modified from scripts shared in Clay et al. 2020, J. Anim. Ecol.
+
 ### AIM: Plot predicted transition probabilities for wind speeds, directions and boldness
 
-### Citation: This code is adapted from methods presented in Clay et al. 2020, J. Anim. Ecol.
+# PREAMBLE --------------------------------------------------------------
 
 library(ggplot2); library(momentuHMM); library(plyr)
 
-# LOADING DATA --------------------------------------------------------------
+
+### Create outputs and figures folders if they don't currently exist
+out.path <- "./Data_outputs/"
+if(dir.exists(out.path) == FALSE){
+  dir.create(out.path)
+}
+
+figures.path <- "./Figures/"
+if(dir.exists(figures.path) == FALSE){
+  dir.create(figures.path)
+}
 
 ## LOAD MODELS
 
@@ -45,14 +57,14 @@ head(cov.f_speed)
 # and outputs list of predicted transition probabilities and upper and lower CIs 
 # (this takes around 20 minutes to run)
 
-#tock <- Sys.time()
-#ci.list_F <- lapply(1:nrow(cov.f_speed), function(x) {
-  #print(x)
-  #cov.sub.df <- cov.f_speed[x,]
-  #return(CIreal(f.best.mod,covs=cov.sub.df)$gamma)
-#})
-#tick <- Sys.time()
-#tick-tock
+tock <- Sys.time()
+ci.list_F <- lapply(1:nrow(cov.f_speed), function(x) {
+  print(x)
+  cov.sub.df <- cov.f_speed[x,]
+  return(CIreal(f.best.mod,covs=cov.sub.df)$gamma)
+})
+tick <- Sys.time()
+tick-tock
 
 #save(ci.list_F, file = "Data_outputs/female_speedtransition_CIs.R")
 load("Data_outputs/female_speedtransition_CIs.R")
@@ -81,14 +93,14 @@ head(cov.m_speed)
 
 
 #  Get list of predicted transition probabilities and upper and lower CIs 
-#tock <- Sys.time()
-#ci.list_M <- lapply(1:nrow(cov.m_speed), function(x) {
-  #print(x)
-  #cov.sub.df <- cov.m_speed[x,]
-  #return(CIreal(m.best.mod,covs=cov.sub.df)$gamma)
-#})
-#tick <- Sys.time()
-#tick-tock
+tock <- Sys.time()
+ci.list_M <- lapply(1:nrow(cov.m_speed), function(x) {
+  print(x)
+  cov.sub.df <- cov.m_speed[x,]
+  return(CIreal(m.best.mod,covs=cov.sub.df)$gamma)
+})
+tick <- Sys.time()
+tick-tock
 
 
 #save(ci.list_M, file = "Data_outputs/male_speedtransition_CIs.R")
@@ -100,7 +112,7 @@ lb.m_speed <- lapply(ci.list_M,'[[',3)
 ub.m_speed <- lapply(ci.list_M,'[[',4)
 
 
-# EXTRACT TRANSITION ESTIMATE VALUES FOR MIN AND MAX WIND SPEED (TABLE 1) ----------------------------------------------------
+# TABLE 1: EXTRACT TRANSITION ESTIMATE VALUES FOR MIN AND MAX WIND SPEED ----------------------------------------------------
 
 ## Rest - search transitions
 
@@ -226,7 +238,7 @@ subset(all.df, sex == "M" & dir == 0 & wind ==  max(subset(all.df, sex == "M")$w
 
 
 
-# PLOT TRANSITIONS ESTIMATES BY SPEED FOR AVERAGE WIND DIRECTION (FIGURE 2) --------------------------------------------
+# FIGURE 2: PLOT TRANSITIONS ESTIMATES BY SPEED FOR AVERAGE WIND DIRECTION --------------------------------------------
 
 shy_col <- "#00DD2F"
 bold_col <- "purple"
@@ -330,14 +342,14 @@ head(cov.f_speed)
 
 
 # Output list of predicted transition probabilities and upper and lower CIs 
-#tock <- Sys.time()
-#ci.list_F_bydir <- lapply(1:nrow(cov.f_speed), function(x) {
- # print(x)
- # cov.sub.df <- cov.f_speed[x,]
- # return(CIreal(f.best.mod,covs=cov.sub.df)$gamma)
-#})
-#tick <- Sys.time()
-#tick-tock
+tock <- Sys.time()
+ci.list_F_bydir <- lapply(1:nrow(cov.f_speed), function(x) {
+  print(x)
+  cov.sub.df <- cov.f_speed[x,]
+  return(CIreal(f.best.mod,covs=cov.sub.df)$gamma)
+})
+tick <- Sys.time()
+tick-tock
 
 #save(ci.list_F_bydir, file = "Data_outputs/female_speedtransitionbydir_CIs.R")
 load("Data_outputs/female_speedtransitionbydir_CIs.R")
@@ -366,14 +378,14 @@ head(cov.m_speed)
 
 
 # Output list of predicted transition probabilities and upper and lower CIs 
-#tock <- Sys.time()
-#ci.list_M_bydir <- lapply(1:nrow(cov.m_speed), function(x) {
- # print(x)
- # cov.sub.df <- cov.m_speed[x,]
- # return(CIreal(m.best.mod,covs=cov.sub.df)$gamma)
-#})
-#tick <- Sys.time()
-#tick-tock
+tock <- Sys.time()
+ci.list_M_bydir <- lapply(1:nrow(cov.m_speed), function(x) {
+  print(x)
+  cov.sub.df <- cov.m_speed[x,]
+  return(CIreal(m.best.mod,covs=cov.sub.df)$gamma)
+})
+tick <- Sys.time()
+tick-tock
 
 
 #save(ci.list_M_bydir, file = "Data_outputs/male_speedtransitionbydir_CIs.R")
