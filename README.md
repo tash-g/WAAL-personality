@@ -4,7 +4,7 @@ Natasha Gillies, Henri Weimerskirch, Jack Thorley, Thomas A. Clay, Lucía Martin
 ## Overview
 This repository contains scripts and data to recreate the main results and figures of this paper (currently in prep). 
 
-## Codes
+## Scripts
 A short description of each script is given below.
 
 - **1_HMM_construct-models.R** This script is used to fit Hidden Markov Models (HMMs) with every possible combination of boldness and boldness by wind interaction covariates. AIC is used to compare the relative support for each. The code here fits the models, outputs the AIC for each, as well as autocorrelation and goodness-of-fit plots. _Note: depending on processing power, each model may take several hours to compile and so this script will take several days to run to completion._
