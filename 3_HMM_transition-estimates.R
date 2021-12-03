@@ -284,7 +284,7 @@ for (i in 1:3) {
     
     dirPlot <- ggplot(all.df, aes(x = wind, y=mean)) + facet_wrap(~sex, labeller=labeller(sex=labels)) +
       geom_ribbon(size = 1, linetype = "blank", aes(ymin=lower_bound, ymax=upper_bound, col = persCat), alpha=0.15) + 
-      geom_line(size = 1, linetype = "dashed", aes(col = persCat)) + 
+      geom_line(size = 1, aes(col = persCat)) + 
       theme_bw() + ylab("Transition probability") +
       scale_x_continuous(limits=c(0, 23)) +
       #scale_y_continuous(breaks = scales::pretty_breaks(n = 5)) +

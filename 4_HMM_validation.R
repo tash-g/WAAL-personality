@@ -111,35 +111,228 @@ sum(gps_comp$validation[gps_comp$State_HMM == "Rest"])/nrow(gps_comp[gps_comp$St
 
 
 
+# 2. PERMUTATION - RUN MODELS ------------------------------------------------
+
+## Produce datasets where one variable has been randomised and output as .RData file:
+## this facilitates parallel processing of the models to speed up computation. This 
+## section of the script should be run for each sex separately
 
 
-# 2. PERMUTATION -------------------------------------------------------------
+# Produce randomised datasets ---------------------------------------------
 
-### Load in AIC data
-
-
-#### Plot in comparison to real AIC ####
-
-# AIC of best' model 
-AIC.real_F <- AIC(f.best.mod)
-
-# Load in tables for each covariate
-windSp <- read.csv("./Data_outputs/AIC_table_F_randomised-WindSp.csv")
-winddir <- read.csv("./Data_outputs/AIC_table_F_randomised-WindDir.csv")
-lod <- read.csv("./Data_outputs/AIC_table_F_randomised-LoD.csv")
-boldness <- read.csv("./Data_outputs/AIC_table_F_randomised-mean_BLUP_logit.csv")
-
-windSp$Covar <- "WindSp"
-winddir$Covar <- "WindDir"
-lod$Covar <- "LoD"
-boldness$Covar <- "mean_BLUP_logit"
-
-merged.table <- rbind(windSp, winddir, lod,  boldness)
-
-# Plot randomised AIC in comparison to 'best' model 
-plot.df <- data.frame(AIC = rep(AIC.real_F), Covar <- c("WindSp", "WindDir", "LoD", "mean_BLUP_logit"))
-
-ggplot(plotdf, aes(Covar, AIC)) + geom_boxplot()+geom_hline(yintercept=AIC.real_R, linetype="dashed", 
-                                                               color = "red", size = 1.1)+xlab("Dummy covariates")
+## Each of the 4 covariates (WindSp, WindDir, LoD, mean_BLUP_logit) is randomised 
+## in turn 50 times, giving 4 * 50 = 200 randomised datasets
 
 
+### Load main dataset
+mainDat <- read.csv("Data_inputs/WAAL_GPS_2010-2021_personality_wind.csv", stringsAsFactors = F)
+mainDat <- subset(mainDat, Sex == "M")
+
+### Randomise wind speed (WindSp) - outputs 1:50
+n.iter <- 50
+
+for (i in 1:n.iter) {
+  
+  data.R <- mainDat
+  data.R$WindSp <- sample(data.R$WindSp)
+  
+  write.csv(data.R, file = paste0("Data_outputs/data_randomised-", i, ".csv"), row.names = F)
+  
+}
+
+### Randomise wind direction (WindDir)
+
+n.iter2 <- n.iter + n.iter
+
+for (i in n.iter:n.iter2) {
+  
+  data.R <- mainDat
+  data.R$WindDir <- sample(data.R$WindDir)
+  
+  write.csv(data.R, file = paste0("Data_outputs/data_randomised-", i, ".csv"), row.names = F)
+  
+}
+
+
+### Randomise LoD
+
+n.iter3 <- n.iter + n.iter2
+
+for (i in n.iter2:n.iter3) {
+  
+  data.R <- mainDat
+  data.R$LoD <- sample(data.R$LoD)
+  
+  write.csv(data.R, file = paste0("Data_outputs/data_randomised-", i, ".csv"), row.names = F)
+  
+}
+
+
+
+### Randomise boldness (mean_BLUP_logit) - needs to be randomised within trip
+
+for (i in n.iter3:n.iter4) {
+  
+  data.R <- mainDat
+  
+  # Randomise boldness within each trip
+  tripLengths <- rle(as.character(data.R$ID))$lengths # gives runs of trips
+  uniqueTrips <- unique(data.R$ID) # gives number of unique trips
+  boldSample <- sample(data.R$mean_BLUP_logit, size = length(uniqueTrips)) # sample boldness estimates
+  data.R$mean_BLUP_logit <- rep(boldSample, tripLengths) # repeat sampled estimate over run of trip
+  
+  write.csv(data.R, file = paste0("Data_outputs/data_randomised-", i, ".csv"), row.names = F)
+  
+}
+
+
+
+
+# Run the randomised models -----------------------------------------------
+
+## This section of the script is set-up to run on parallel machines. To run this in
+## R directly, it can be inserted into a for loop to iterate through each dataset. 
+## Please note this will require significant computing time. 
+
+### Load model parameters from best model (for males and females separately)
+
+# Load in best models for males and females
+file.in <- paste0("./Data_outputs/", paste0("F_mod_", 8, ".RData"))
+load(file = file.in)
+f.mod <- model
+
+file.in <- paste0("./Data_outputs/", paste0("M_mod_", 6, ".RData"))
+load(file = file.in)
+m.mod <- model
+
+# Females #
+form <- ~WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir
+par <- getPar0(model=f.mod, nbStates=3, formula = form)
+
+# Males #
+form <- ~WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir
+par <- getPar0(model=m.mod, nbStates=3, formula = form)
+
+
+## Assign step lengths, turning angles, and stateNames
+
+shape_0 <- c(12.42, 4.10, 0.33)
+scale_0 <- c(3.62, 4.71, 0.17)
+stepPar0 <- c(shape_0,scale_0)
+
+location_0 <- c(0.00302, 0.00343, 0.0291)
+concentration_0 <- c(50.79, 1.27, 44.02)
+anglePar0 <- c(location_0,concentration_0)
+
+stateNames<-c("travel","search", "rest")
+
+
+### Load randomised data and prepare for HMM
+
+data.R <- read.csv("data_randomised-.csv")
+
+## Prepare data for HMM
+permDat <- momentuHMM::prepData(data.R, type= "LL", 
+                                coordNames = c("x", "y"))
+
+## Deal with zero lengths by setting 0 to very small numbers
+ind_zero <- which(permDat$step == 0)
+if (length(ind_zero)>0){
+  permDat$step[ind_zero] <- runif(length(ind_zero))/10000
+}
+ind_zero <- which(permDat$step == "NA")
+if (length(ind_zero)>0){
+  permDat$step[ind_zero] <- runif(length(ind_zero))/10000
+}
+
+permDat <- subset(permDat, !is.na(angle))
+
+### Run the model
+mod.p <- momentuHMM::fitHMM(data = permDat, nbStates = 3,
+                            dist = list(step = "gamma", angle = "vm"),
+                            Par0 = list(step = par$Par$step, angle = par$Par$angle, delat0 = par$delta),
+                            estAngleMean = list(angle = T), beta0 = par$beta, 
+                            stateNames = stateNames, 
+                            formula = form)
+
+### Get AIC and save to file
+
+AIC.p <- data.frame(Iter = i, Formula = as.character(form)[2], AIC = AIC(mod.p))
+save(AIC.p, file = "results.RData")
+
+
+
+# 2. PERMUTATION - RESULTS -------------------------------------------------------------
+
+library(ggplot2)
+
+
+# Load AIC data for randomised models -------------------------------------
+
+# Males #
+results.M_path <- "Data_outputs/HMM_validation_M-output/"
+results.M_files <- list.files(results.M)
+results.M_list <- vector("list", length = length(results.M_files))
+
+for (i in 1:length(results.M_files)) {
+  load(paste0(results.M_path, results.M_files[i]))
+  results.M_list[[i]] <- AIC.p
+}
+
+results.M <- data.frame(do.call("rbind", results.M_list))
+
+## Order by iteration number
+results.M <- results.M[order(results.M$Iter),]
+
+## Match to randomised covariate
+covariates <- rep(c("WindSp", "WindDir", "LoD", "mean_BLUP_logit"), each = 50)
+results.M$cov <- covariates
+
+## Get AIC of best supported model
+file.in <- paste0("./Data_outputs/", paste0("M_mod_", 6, ".RData"))
+load(file = file.in)
+m.best.mod <- model
+
+AIC.M <- AIC(m.best.mod)
+
+
+# Females #
+results.F_path <- "Data_outputs/HMM_validation_F-output/"
+results.F_files <- list.files(results.F)
+results.F_list <- vector("list", length = length(results.F_files))
+
+for (i in 1:length(results.F_files)) {
+  load(paste0(results.F_path, results.F_files[i]))
+  results.F_list[[i]] <- AIC.p
+}
+
+results.F <- data.frame(do.call("rbind", results.F_list))
+
+## Order by iteration number
+results.F <- results.F[order(results.F$Iter),]
+
+## Match to randomised covariate
+covariates <- rep(c("WindSp", "WindDir", "LoD", "mean_BLUP_logit"), each = 50)
+results.F$cov <- covariates
+
+## Get AIC of best supported model
+file.in <- paste0("./Data_outputs/", paste0("F_mod_", 8, ".RData"))
+load(file = file.in)
+f.best.mod <- model
+
+AIC.F <- AIC(f.best.mod)
+
+# Plot randomised AIC values relative to that of 'best' model -------------
+
+maleplot <- ggplot(aes(x = cov, y = AIC), data = results.M) + geom_boxplot() +
+  geom_hline(yintercept = AIC.M, linetype = "dashed", colour = "red", size = 1) +
+  labs(x = "Randomised Covariates") +
+  theme_bw()
+
+
+femaleplot <- ggplot(aes(x = cov, y = AIC), data = results.F) + geom_boxplot() +
+  geom_hline(yintercept = AIC.F, linetype = "dashed", colour = "red", size = 1) +
+  labs(x = "Randomised Covariates") +
+  theme_bw()
+
+gridExtra::grid.arrange(femaleplot, maleplot, ncols = 2)

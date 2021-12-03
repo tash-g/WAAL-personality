@@ -172,10 +172,10 @@ ggplot(stat.df, aes(WindSp, prob)) + facet_wrap(.~sex, labeller=label_value) +
   scale_fill_manual(values = c("grey0", "grey0", "grey0", "grey30", "grey30", "grey30", "grey60", "grey60", "grey60")) +
   geom_line(aes(colour = pers, linetype = state), size = 1.3) + 
   scale_linetype_manual(values=c("solid", "dotted", "dashed"),labels = c("Travel", "Search", "Rest"), name = "Behaviour") +
-  ylim(0, 1) +
   scale_color_manual(name = "", labels = c("Bold", "Shy"), values = c(bold_col, shy_col)) +
   theme_bw() + ylab("Stationary probability")+
   scale_x_continuous(limits=c(0, 23)) + xlab(expression(paste("Wind speed (", ms^-1, ")", sep=""))) +
+  scale_y_continuous(limits=c(0, 0.75), breaks=c(0, 0.25, 0.5, 0.75)) +
   theme(axis.text.x=element_text(size=16), 
         axis.text.y=element_text(size=16), 
         axis.title.x=element_text(size=18),
