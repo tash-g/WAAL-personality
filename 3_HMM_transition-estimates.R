@@ -67,7 +67,7 @@ tick <- Sys.time()
 tick-tock
 
 #save(ci.list_F, file = "Data_outputs/female_speedtransition_CIs.R")
-load("Data_outputs/female_speedtransition_CIs.R")
+# load("Data_outputs/female_speedtransition_CIs.R")
 
 # Extract means, upper and lower bounds and put into separate lists
 means.f_speed <- lapply(ci.list_F, '[[', 1) 
@@ -104,7 +104,7 @@ tick-tock
 
 
 #save(ci.list_M, file = "Data_outputs/male_speedtransition_CIs.R")
-load("Data_outputs/male_speedtransition_CIs.R")
+# load("Data_outputs/male_speedtransition_CIs.R")
 
 # Extract means, upper and lower bounds and put into separate lists
 means.m_speed <- lapply(ci.list_M, '[[', 1) 
@@ -220,6 +220,8 @@ df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, dir = cov.f_sp
 df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
 
 all.df <- rbind(df.m, df.f)
+
+######## RJ: I stopped here (weird results displaying after)
 
 # Isolate probabilities
 subset(all.df, sex == "F" & dir == 0 & wind ==  min(subset(all.df, sex == "F")$wind))[1,] # low = 0.1388584   0.1159332   0.1654686     shy
