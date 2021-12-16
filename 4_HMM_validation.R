@@ -271,7 +271,7 @@ library(ggplot2)
 
 # Males #
 results.M_path <- "Data_outputs/HMM_validation_M-output/"
-results.M_files <- list.files(results.M)
+results.M_files <- list.files(results.M_path)
 results.M_list <- vector("list", length = length(results.M_files))
 
 for (i in 1:length(results.M_files)) {
@@ -298,7 +298,7 @@ AIC.M <- AIC(m.best.mod)
 
 # Females #
 results.F_path <- "Data_outputs/HMM_validation_F-output/"
-results.F_files <- list.files(results.F)
+results.F_files <- list.files(results.F_path)
 results.F_list <- vector("list", length = length(results.F_files))
 
 for (i in 1:length(results.F_files)) {
@@ -316,13 +316,15 @@ covariates <- rep(c("WindSp", "WindDir", "LoD", "mean_BLUP_logit"), each = 50)
 results.F$cov <- covariates
 
 ## Get AIC of best supported model
-file.in <- paste0("./Data_outputs/", paste0("F_mod_", 8, ".RData"))
+file.in <- paste0("./Data_outputs/", paste0("F_mod_", 1, ".RData"))
 load(file = file.in)
 f.best.mod <- model
 
 AIC.F <- AIC(f.best.mod)
 
 # Plot randomised AIC values relative to that of 'best' model -------------
+
+library(ggplot2)
 
 maleplot <- ggplot(aes(x = cov, y = AIC), data = results.M) + geom_boxplot() +
   geom_hline(yintercept = AIC.M, linetype = "dashed", colour = "red", size = 1) +
