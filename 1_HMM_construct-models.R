@@ -37,7 +37,7 @@ head(dat_OG)
 # Some NA wind directions, because we don't have bearings for the last fix of the trip
 gps <- subset(gps, !is.na(WindDir))
 
-# Remove errorneous step lengths
+# Remove erroneous step lengths that can't be larger than 40 m
 hist(dat_OG$step)
 nrow(subset(dat_OG, step > 40))/nrow(dat_OG)
 dat_OG <- subset(dat_OG, step < 40)
@@ -97,7 +97,8 @@ save(m1_M, file = "Data_outputs/M_mod_1.RData")
 save(m1_F, file = "Data_outputs/F_mod_1.RData")
 
 # Plot pseudo-residuals
-plotPR(m1)
+plotPR(m1_M)
+plotPR(m1_F)
 
 # Look at acf of step length over longer time lag
 acf(dat$step[!is.na(dat$step)], lag.max = 300)
@@ -111,6 +112,10 @@ acf(dat$step[!is.na(dat$step)], lag.max = 300)
 ## Run next couple of models for males and females separately - make sure to change model names as appropriate
 
 ### CURRENTLY RUNNING FOR FEMALES ###
+
+model_run <- m1_F # will have to manually change for males to m1_M
+data_run <- dat_female # will have to manually change for males to dat_male
+sex_initial <- "F"
 
 ## Set up personality formulae 
 
@@ -140,7 +145,7 @@ formula[[21]] <- ~ WindSp + mean_BLUP_logit + LoD + WindDir + WindDir:mean_BLUP_
 # this function gets starting values for each model from existing null model fit for a specified covariate formula
 Par <- list()
 for (i in 2:length(formula)){
-  Par[[i]] <- getPar0(model=m1_F, nbStates=3, formula = formula[[i]])
+  Par[[i]] <- getPar0(model=model_run, nbStates=3, formula = formula[[i]])
 }
 
 
@@ -156,22 +161,27 @@ m.list <- vector(mode = "list", length =length(formula))
 
 for (i in 2:length(formula)) {
     print(i)
-    m.list[[i]] <- fitHMM(data=dat_female, nbStates=3,
+    m.list[[i]] <- fitHMM(data=data_run, nbStates=3,
                             dist=list(step="gamma",angle="vm"),
                             Par0=list(step=Par[[i]]$Par$step, angle=Par[[i]]$Par$angle,delta0 = Par[[i]]$delta),
                             estAngleMean = list(angle=TRUE), beta0 = Par[[i]]$beta,
                             stateNames = stateNames, 
                             formula = formula[[i]])
     model <- m.list[[i]]
-    file.out <- paste0("./Data_outputs/", paste0("F_mod_", i, ".RData"))
+    file.out <- paste0("./Data_outputs/", paste0(sex_initial, "_mod_", i, ".RData"))
     save(model, file = file.out)
    }
-
 
 # FIND THE BEST MODEL -----------------------------------------------------
 
 # Iterate through each model set, load in models, output autocorrelation plots for step lengths and turning angles, pseudo-residual 
 # and qq plots, extract model coefficients for each transition and plot, and paste out AIC table
+
+### Create figures folder
+fig.path <- "./Figures/"
+if(dir.exists(fig.path) == FALSE){
+  dir.create(fig.path)
+}
 
 # Specifying output lists of length formula
 m.list <- vector(mode = "list", length =length(formula))
@@ -180,7 +190,7 @@ out.df <- vector(mode = "list", length =length(formula))
 for (i in 1:length(formula)) {
   print(i)
   
-  file.in <- paste0("./Data_outputs/", paste0("F_mod_", i, ".RData"))
+  file.in <- paste0("./Data_outputs/", paste0(sex_initial,"_mod_", i, ".RData"))
   load(file = file.in)
   if (i == 1) { m.list[[i]] <- m1_F} else { m.list[[i]] <- model}
   
@@ -197,14 +207,14 @@ for (i in 1:length(formula)) {
   par(mfrow=c(1,1))
   ylimit <- qnorm((1 + 0.95)/2)/sqrt(length(pr$stepRes[!is.na(pr$stepRes)])) + 1
   acf(pr$stepRes[is.finite(pr$stepRes)],lag.max = 300)
-  name.plot <- paste0("./Figures/", paste0("F_mod_", i, "_acf_step.png"))
+  name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_acf_step.png"))
   dev.copy(png, name.plot,  width = 800, height = 500)
   dev.off()
   
   # Turning angle
   par(mfrow=c(1,1))
   acf(pr$angleRes[!is.na(pr$angleRes)],lag.max = 300)
-  name.plot <- paste0("./Figures/", paste0("F_mod_", i, "_acf_angle.png"))
+  name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_acf_angle.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off()
   
@@ -219,13 +229,13 @@ for (i in 1:length(formula)) {
   plot(stepres ~ ws, data = res.df)
   boxplot(angleres ~ lod, data = res.df)
   plot(angleres ~ ws, data = res.df)
-  name.plot <- paste0("./Figures/", paste0("F_mod_", i, "_pseudo-residuals.png"))
+  name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_pseudo-residuals.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off()
   
   # outputting qq plots
   plotPR(m.list[[i]])
-  name.plot <- paste0("./Figures/", paste0("F_mod_", i, "_acf_qq.png"))
+  name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_acf_qq.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off() 
   
@@ -256,7 +266,7 @@ for (i in 1:length(formula)) {
     geom_point(aes(colour = Transitions),position=pd)+
     geom_errorbar(aes(ymin=Lwr, ymax=Upr, colour = Transitions), width=.8, position=pd) +theme_bw()
   print(pl)
-  name.plot <- paste0("./Figures/", paste0("F_mod_", i, "_coefficients.png"))
+  name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_coefficients.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off()
 }
@@ -267,7 +277,7 @@ all.out <- do.call(rbind, out.df)
 all.out <- all.out[order(all.out$AIC),]
 
 # Print out AIC table
-out.path <- "./Data_outputs/AIC_table_F.csv"
+out.path <- paste0("./Data_outputs/AIC_table_", sex_initial, ".csv")
 write.csv(all.out, out.path, row.names=T)
 
 

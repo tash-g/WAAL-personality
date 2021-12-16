@@ -13,7 +13,7 @@ if(dir.exists(out.path) == FALSE){
   dir.create(out.path)
 }
 
-figures.path <- "./Figures/"
+figures.path <- "./Figures/Stationary estimates/"
 if(dir.exists(figures.path) == FALSE){
   dir.create(figures.path)
 }
@@ -156,7 +156,7 @@ stat.df[,c(9,10)] <- lapply(stat.df[,c(9,10)], as.factor)
 stat.df$pers_state <- as.factor(as.character(paste(stat.df$pers, stat.df$state, sep = "_")))
 
 #save(stat.df, file = "Data_outputs/stationary_probs_SPEED.RData")
-load("Data_outputs/stationary_probs_SPEED.RData")
+# load("Data_outputs/stationary_probs_SPEED.RData")
 
 
 # PLOT STATIONARY PROBABILITiES BY SPEED FOR AVERAGE WIND DIRECTION (FIGURE 3) --------
@@ -246,8 +246,8 @@ stat.df[,c(9,10)] <- lapply(stat.df[,c(9,10)], as.factor)
 
 stat.df$pers_state <- as.factor(as.character(paste(stat.df$pers, stat.df$state, sep = "_")))
 
-#save(stat.df, file = "Data_outputs/stationary_probabilities_DIR.RData")
-load("Data_output/stationary_probabilities_DIR.RData")
+# save(stat.df, file = "Data_outputs/stationary_probabilities_DIR.RData")
+# load("Data_output/stationary_probabilities_DIR.RData")
 
 
 
