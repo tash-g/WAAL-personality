@@ -72,7 +72,7 @@ gc()
 
 #### Load validation data ####
 
-gps_manual <- read.csv("Data_inputs/WAAL_GPS_2020-2021_manualStates.csv")
+gps_manual <- read.csv("Data_inputs/WAAL_gps_2020-2021_manualStates.csv")
 gps_manual <- gps_manual %>% 
   mutate(Ring = as.integer(as.factor(Ring))) %>% data.frame()
 
