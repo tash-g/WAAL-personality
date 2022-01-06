@@ -126,7 +126,7 @@ sum(gps_comp$validation[gps_comp$State_HMM == "Rest"])/nrow(gps_comp[gps_comp$St
 
 ### Load main dataset
 mainDat <- read.csv("Data_inputs/WAAL_GPS_2010-2021_personality_wind.csv", stringsAsFactors = F)
-mainDat <- subset(mainDat, Sex == "M")
+mainDat <- subset(mainDat, Sex == "F")
 
 ### Randomise wind speed (WindSp) - outputs 1:50
 n.iter <- 50
@@ -316,7 +316,7 @@ covariates <- rep(c("WindSp", "WindDir", "LoD", "mean_BLUP_logit"), each = 50)
 results.F$cov <- covariates
 
 ## Get AIC of best supported model
-file.in <- paste0("./Data_outputs/", paste0("F_mod_", 1, ".RData"))
+file.in <- paste0("./Data_outputs/", paste0("F_mod_", 7, ".RData"))
 load(file = file.in)
 f.best.mod <- model
 
