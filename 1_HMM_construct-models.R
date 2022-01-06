@@ -26,16 +26,17 @@ gps$DateTime <- NULL
 gps[,c(1,2,3,8,9)] <- lapply(gps[,c(1,2,3,8,9)], as.factor) # ring, sex, year, LoD, ID
 gps[,c(4:7,10)] <- lapply(gps[,c(4:7,10)], as.numeric) # Longitude, Latitude, WindSp, WindDir
 
+# Some NA wind directions, because we don't have bearings for the last fix of the trip
+gps <- subset(gps, !is.na(WindDir))
 
 
 # INITIALISE HMM DATA ---------------------------------------------------------
+
 
 dat_OG <- prepData(gps, type= "LL", # longs and lats
                coordNames = c("Longitude", "Latitude")) ## these are our names
 head(dat_OG)
 
-# Some NA wind directions, because we don't have bearings for the last fix of the trip
-gps <- subset(gps, !is.na(WindDir))
 
 # Remove erroneous step lengths that can't be larger than 40 m
 hist(dat_OG$step)

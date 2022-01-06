@@ -18,6 +18,18 @@ if(dir.exists(figures.path) == FALSE){
   dir.create(figures.path)
 }
 
+
+figures.path <- "./Figures/Transition Estimates/"
+if(dir.exists(figures.path) == FALSE){
+  dir.create(figures.path)
+}
+
+
+figures.path <- "./Figures/Transition Estimates/By_wind/"
+if(dir.exists(figures.path) == FALSE){
+  dir.create(figures.path)
+}
+
 ## LOAD MODELS
 
 # F best
@@ -194,6 +206,7 @@ subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[1,] # 
 
 subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[2,] # low = 0.1535877   0.1192771   0.1955761    bold
 subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[2,] # high = 0.09983382  0.05858481   0.1650345    bold
+
 ## Travel - search transitions
 # Get transition data
 state1 <- 1
@@ -251,7 +264,7 @@ for (i in 1:3) {
     state1 <- i; print(i)
     state2 <- j; print(j) 
     
-    ### MALE COEFFECIENTS
+    ### MALE COEFFICIENTS
     
     m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
     m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
