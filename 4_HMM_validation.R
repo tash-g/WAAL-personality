@@ -4,7 +4,7 @@
 
 # 1. EXPERTLY VALIDATED TRACKS --------------------------------------------
 
-library(momentuHMM); library(data.table)
+library(momentuHMM); library(data.table); library(dplyr)
 
 #### Load best models and label states ####
 
@@ -76,7 +76,6 @@ gps_manual <- read.csv("Data_inputs/WAAL_gps_2020-2021_manualStates.csv")
 gps_manual <- gps_manual %>% 
   mutate(Ring = as.integer(as.factor(Ring))) %>% data.frame()
 
-gps_manual$BirdId <- NULL
 gps_manual$Ring <- as.factor(gps_manual$Ring)
 gps_manual$DateTime <- as.POSIXct(gps_manual$DateTime, format = "%d/%m/%Y %H:%M")
 colnames(gps_manual)[c(6,7)] <- c("Longitude", "Latitude")
