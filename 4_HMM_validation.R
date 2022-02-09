@@ -169,6 +169,7 @@ for (i in n.iter2:n.iter3) {
 
 
 ### Randomise boldness (mean_BLUP_logit) - needs to be randomised within trip
+n.iter4 <-  n.iter + n.iter3
 
 for (i in n.iter3:n.iter4) {
   
@@ -263,7 +264,7 @@ save(AIC.p, file = "results.RData")
 
 # 2. PERMUTATION - RESULTS -------------------------------------------------------------
 
-library(ggplot2)
+library(ggplot2); library(momentuHMM)
 
 
 # Load AIC data for randomised models -------------------------------------
@@ -315,7 +316,7 @@ covariates <- rep(c("WindSp", "WindDir", "LoD", "mean_BLUP_logit"), each = 50)
 results.F$cov <- covariates
 
 ## Get AIC of best supported model
-file.in <- paste0("./Data_outputs/", paste0("F_mod_", 7, ".RData"))
+file.in <- paste0("./Data_outputs/", paste0("F_mod_", 8, ".RData"))
 load(file = file.in)
 f.best.mod <- model
 
@@ -323,17 +324,37 @@ AIC.F <- AIC(f.best.mod)
 
 # Plot randomised AIC values relative to that of 'best' model -------------
 
-library(ggplot2)
-
 maleplot <- ggplot(aes(x = cov, y = AIC), data = results.M) + geom_boxplot() +
   geom_hline(yintercept = AIC.M, linetype = "dashed", colour = "red", size = 1) +
   labs(x = "Randomised Covariates") +
-  theme_bw()
+  theme_bw() +
+  theme(axis.text.x=element_text(size=16), 
+        axis.text.y=element_text(size=16), 
+        axis.title.x=element_text(size=18),
+        axis.title.y=element_text(size=18),
+        legend.position = "none",
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        strip.text.x = element_text(size = 16)) 
 
 
 femaleplot <- ggplot(aes(x = cov, y = AIC), data = results.F) + geom_boxplot() +
   geom_hline(yintercept = AIC.F, linetype = "dashed", colour = "red", size = 1) +
   labs(x = "Randomised Covariates") +
-  theme_bw()
+  theme_bw() +
+  theme(axis.text.x=element_text(size=16), 
+        axis.text.y=element_text(size=16), 
+        axis.title.x=element_text(size=18),
+        axis.title.y=element_text(size=18),
+        legend.position = "none",
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        strip.text.x = element_text(size = 16)) 
 
-gridExtra::grid.arrange(femaleplot, maleplot, ncols = 2)
+png(filename = "Figures/supp_AIC_comparison_FEMALE.png", width = 9, height = 7, units = "in", res = 600)
+femaleplot
+dev.off()
+
+png(filename = "Figures/supp_AIC_comparison_MALE.png", width = 9, height = 7, units = "in", res = 600)
+maleplot
+dev.off()
