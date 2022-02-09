@@ -4,7 +4,7 @@
 
 # 1. EXPERTLY VALIDATED TRACKS --------------------------------------------
 
-library(momentuHMM); library(data.table); library(dplyr)
+library(momentuHMM); library(data.table); library(dplyr); library(lubridate)
 
 #### Load best models and label states ####
 
@@ -58,8 +58,11 @@ female_data$State[female_data$State == 3] <- "Rest"
 
 ## Bind together + extract relevant columns
 gps_hmm <- rbind(female_data, male_data)
-gps_hmm <- gps_hmm[,c(1, 4, 5, 6, 7, 12, 13, 14)] # TripID Ring Sex Year DateTime Longitude Latitude State
+gps_hmm <- gps_hmm[,c(1, 4, 5, 6, 7, 12, 13, 14)] # ID Ring Sex Year DateTime Longitude Latitude State
 colnames(gps_hmm)[8] <- "State_HMM"
+
+# Get ringYr column for comparison
+gps_hmm$RingYr <- as.character(paste0(gps_hmm$Ring, "_", gps_hmm$Year))
 
 ## Clear some space
 all_data <- NULL
@@ -73,24 +76,30 @@ gc()
 #### Load validation data ####
 
 gps_manual <- read.csv("Data_inputs/WAAL_gps_2020-2021_manualStates.csv")
-gps_manual <- gps_manual %>% 
-  mutate(Ring = as.integer(as.factor(Ring))) %>% data.frame()
 
-gps_manual$Ring <- as.factor(gps_manual$Ring)
+gps_manual$Ring <- as.character(gps_manual$Ring)
 gps_manual$DateTime <- as.POSIXct(gps_manual$DateTime, format = "%d/%m/%Y %H:%M")
-colnames(gps_manual)[c(6,7)] <- c("Longitude", "Latitude")
+gps_manual$BirdId <- NULL
 colnames(gps_manual)[8] <- "state_manual"
+
+# Get ringYr column for comparison
+gps_manual$RingYr <- as.character(paste0(gps_manual$Ring, "_", gps_manual$Year))
 
 #### Perform the validation ####
 
 ## Extract relevant birds
-valBirds <- unique(gps_manual$Ring)
-gps_hmm.subset <- subset(gps_hmm, Ring %in% valBirds)
+valBirds <- unique(gps_manual$RingYr)
+gps_hmm.subset <- subset(gps_hmm, RingYr %in% valBirds)
 
 ## Merge to nearest minute
+
 setkey(setDT(gps_hmm.subset), "Ring", "DateTime")
 setkey(setDT(gps_manual), "Ring", "DateTime")
 gps_comp <- as.data.frame(gps_hmm.subset[gps_manual, roll = "nearest"])
+
+
+# Merge data
+gps_comp <- merge(gps_manual, gps_hmm.subset, by = c("Ring", "DateTime.5mins"))
 
 gps_comp$state_manual[gps_comp$state_manual == 3] <- "Rest"
 gps_comp$state_manual[gps_comp$state_manual == 2] <- "Search"
@@ -103,10 +112,10 @@ gps_comp <- subset(gps_comp, !is.na(validation))
 ### Compute accuracy
 
 # Overall
-sum(gps_comp$validation)/nrow(gps_comp)  # 78.6 %
-sum(gps_comp$validation[gps_comp$State_HMM == "Travel"])/nrow(gps_comp[gps_comp$State_HMM == "Travel",]) # 88.9 %
-sum(gps_comp$validation[gps_comp$State_HMM == "Search"])/nrow(gps_comp[gps_comp$State_HMM == "Search",]) # 49.8 %
-sum(gps_comp$validation[gps_comp$State_HMM == "Rest"])/nrow(gps_comp[gps_comp$State_HMM == "Rest",]) # 94.6 %
+sum(gps_comp$validation)/nrow(gps_comp)  
+sum(gps_comp$validation[gps_comp$State_HMM == "Travel"])/nrow(gps_comp[gps_comp$State_HMM == "Travel",]) 
+sum(gps_comp$validation[gps_comp$State_HMM == "Search"])/nrow(gps_comp[gps_comp$State_HMM == "Search",]) 
+sum(gps_comp$validation[gps_comp$State_HMM == "Rest"])/nrow(gps_comp[gps_comp$State_HMM == "Rest",]) 
 
 
 
