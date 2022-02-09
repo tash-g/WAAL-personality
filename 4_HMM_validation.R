@@ -152,7 +152,7 @@ for (i in 1:n.iter) {
 
 n.iter2 <- n.iter + n.iter
 
-for (i in n.iter:n.iter2) {
+for (i in (n.iter+1):n.iter2) {
   
   data.R <- mainDat
   data.R$WindDir <- sample(data.R$WindDir)
@@ -166,7 +166,7 @@ for (i in n.iter:n.iter2) {
 
 n.iter3 <- n.iter + n.iter2
 
-for (i in n.iter2:n.iter3) {
+for (i in (n.iter2+1):n.iter3) {
   
   data.R <- mainDat
   data.R$LoD <- sample(data.R$LoD)
@@ -180,13 +180,13 @@ for (i in n.iter2:n.iter3) {
 ### Randomise boldness (mean_BLUP_logit) - needs to be randomised within trip
 n.iter4 <-  n.iter + n.iter3
 
-for (i in n.iter3:n.iter4) {
+for (i in (n.iter3+1):n.iter4) {
   
   data.R <- mainDat
   
   # Randomise boldness within each trip
-  tripLengths <- rle(as.character(data.R$ID))$lengths # gives runs of trips
-  uniqueTrips <- unique(data.R$ID) # gives number of unique trips
+  tripLengths <- rle(as.character(data.R$Trip_bout))$lengths # gives runs of trips
+  uniqueTrips <- unique(data.R$Trip_bout) # gives number of unique trips
   boldSample <- sample(data.R$mean_BLUP_logit, size = length(uniqueTrips)) # sample boldness estimates
   data.R$mean_BLUP_logit <- rep(boldSample, tripLengths) # repeat sampled estimate over run of trip
   
