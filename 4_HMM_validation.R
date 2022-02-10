@@ -184,13 +184,11 @@ for (i in (n.iter3+1):n.iter4) {
   
   data.R <- mainDat
   
-  # Randomise boldness within each trip
-  tripLengths <- rle(as.character(data.R$Trip_bout))$lengths # gives runs of trips
-  uniqueTrips <- unique(data.R$Trip_bout) # gives number of unique trips
-  boldSample <- sample(data.R$mean_BLUP_logit, size = length(uniqueTrips)) # sample boldness estimates
-  data.R$mean_BLUP_logit <- rep(boldSample, tripLengths) # repeat sampled estimate over run of trip
-  
-  write.csv(data.R, file = paste0("Data_outputs/data_randomised-", i, ".csv"), row.names = F)
+  # Randomise boldness within each individual
+  ringLengths <- rle(as.character(data.R$Ring))$lengths # gives runs of same individual
+  uniqueRing <- unique(data.R$Ring) # gives number of unique individuals
+  boldSample <- sample(data.R$mean_BLUP_logit, size = length(uniqueRing)) # sample boldness estimates
+  data.R$mean_BLUP_logit <- rep(boldSample, ringLengths) # repeat sampled estimate over run of individuals
   
 }
 
