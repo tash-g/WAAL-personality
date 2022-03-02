@@ -13,18 +13,16 @@ if(dir.exists(out.path) == FALSE){
   dir.create(out.path)
 }
 
-
 ### LOAD IN TRACKS
-
 gps <- read.csv(file = "./Data_inputs/WAAL_GPS_2010-2021_personality_wind.csv", na.strings = "NA")
 names(gps)[10] <- "ID"
 names(gps)[8] <- "WindDir"
+gps$DateTime <- as.POSIXct(gps$DateTime, format = "%Y-%m-%d %H:%M:%S")
 gps <- gps[order(gps$ID, gps$DateTime),]
-gps$DateTime <- NULL
 
 ## Isolate columns and specify types
-gps[,c(1,2,3,8,9)] <- lapply(gps[,c(1,2,3,8,9)], as.factor) # ring, sex, year, LoD, ID
-gps[,c(4:7,10)] <- lapply(gps[,c(4:7,10)], as.numeric) # Longitude, Latitude, WindSp, WindDir
+gps[,c(1,3,4,9,10)] <- lapply(gps[,c(1,3,4,9,10)], as.factor) # ring, sex, year, LoD, ID
+gps[,c(5:8,11)] <- lapply(gps[,c(5:8,11)], as.numeric) # Longitude, Latitude, WindSp, WindDir, mean_BLUP_logit
 
 # Some NA wind directions, because we don't have bearings for the last fix of the trip
 gps <- subset(gps, !is.na(WindDir))
@@ -32,14 +30,13 @@ gps <- subset(gps, !is.na(WindDir))
 
 # INITIALISE HMM DATA ---------------------------------------------------------
 
-
 dat_OG <- prepData(gps, type= "LL", # longs and lats
                coordNames = c("Longitude", "Latitude")) ## these are our names
 head(dat_OG)
 
 
 # Remove erroneous step lengths that can't be larger than 40 m
-hist(dat_OG$step)
+#hist(dat_OG$step)
 nrow(subset(dat_OG, step > 40))/nrow(dat_OG)
 dat_OG <- subset(dat_OG, step < 40)
 
@@ -120,7 +117,7 @@ sex_initial <- "F"
 
 ## Set up personality formulae 
 
-formula <- list()	
+formula <- vector(mode = "list", length = 21)	
 formula[[2]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir + WindSp:WindDir
 formula[[3]] <- ~ WindSp:mean_BLUP_logit + WindSp + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir + WindSp:WindDir
 formula[[4]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir + WindSp:WindDir
@@ -193,11 +190,11 @@ for (i in 1:length(formula)) {
   
   file.in <- paste0("./Data_outputs/", paste0(sex_initial,"_mod_", i, ".RData"))
   load(file = file.in)
-  if (i == 1) { m.list[[i]] <- m1_F} else { m.list[[i]] <- model}
+  if (i == 1) { m.list[[i]] <- model_run} else { m.list[[i]] <- model}
   
   ## Extract AIC of model
   if (i == 1) { form_out <- 1} else { form_out <- as.character(formula[[i]])[2]}
-  out.df[[i]] <- data.frame(Model = paste0("F_M", i),
+  out.df[[i]] <- data.frame(Model = paste0(sex_initial, "_M", i),
                             Formula = form_out, AIC = AIC(m.list[[i]]))
   
   ## Construct autocorrelation plot

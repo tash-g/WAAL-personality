@@ -38,7 +38,7 @@ load(file = file.in)
 f.best.mod <- model
 
 # M best
-file.in <- paste0("./Data_outputs/", paste0("M_mod_", 6, ".RData"))
+file.in <- paste0("./Data_outputs/", paste0("M_mod_", 8, ".RData"))
 load(file = file.in)
 m.best.mod <- model
 
@@ -152,20 +152,19 @@ all.df <- rbind(df.m, df.f)
 
 
 # Isolate probabilities
-subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[1,] # low = 0.1066338  0.08520636   0.1326683     shy
-subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[1,] # high = 0.2305976   0.1689537   0.3064392     shy
+subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[1,] # low = 0.08793645  0.07528292   0.1024811     shy
+subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[1,] # high = 0.173204   0.1387598    0.214073     shy
 
-subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[2,] # low = 0.165563    0.127179   0.2127083    bold
-subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1919329   0.1258836   0.2814778    bold
+subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[2,] # low = 0.1077316     0.09125   0.1267748    bold
+subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1514059   0.1170688   0.1936059    bold
 
 
 # Male values
-subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[1,] # low = 0.1473849   0.1182203   0.1822573     shy
-subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[1,] # high = 0.2140871   0.1247433   0.3423888     shy
+subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[1,] # low = 0.1113753  0.09420548   0.1312212     shy
+subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[1,] # high = 0.1464807   0.1114582   0.1901529    shy
 
-subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[2,] # high = 0.1114218  0.08683227   0.1418928   
-subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[2,] # low = 0.1652692  0.09349768   0.2753971    bold
-
+subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[2,] # high = 0.08582071  0.07097483   0.1034262   
+subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[2,] # low = 0.1451251   0.1077956   0.1925913    bold
 
 
 
@@ -194,18 +193,18 @@ df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy
 all.df <- rbind(df.m, df.f)
 
 # Isolate probabilities
-subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[1,] # low = 0.09323681   0.0757844   0.1142117     shy
-subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[1,] # high = 0.1995975   0.1535666   0.2552649     shy
+subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[1,] # low = 0.09053241  0.07876882   0.1038548     shy
+subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[1,] # high = 0.1766198   0.1479212   0.2095172     shy
 
-subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[2,] # low =  0.1838433   0.1459631   0.2289191    bold
-subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1448276    0.101706   0.2021184    bold
+subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[2,] # low =  0.1531855   0.1332452   0.1755058     bold
+subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1459901   0.1190203   0.1778376   bold
 
 # Male values
-subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[1,] # low =  0.05577518  0.04281957  0.07235435     shy
-subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[1,] # high = 0.3070312   0.2006025   0.4389219     shy
+subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[1,] # low =  0.0566238  0.04669046  0.06851855     shy
+subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[1,] # high = 0.2279502   0.1804789   0.2835871      shy
 
-subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[2,] # low = 0.1535877   0.1192771   0.1955761    bold
-subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[2,] # high = 0.09983382  0.05858481   0.1650345    bold
+subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[2,] # low = 0.130342   0.1076158   0.1570229     bold
+subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[2,] # high = 0.1235306  0.09338255   0.1616761     bold
 
 ## Travel - search transitions
 # Get transition data
@@ -232,18 +231,18 @@ all.df <- rbind(df.m, df.f)
 
 
 # Isolate probabilities
-subset(all.df, sex == "F" & wind ==  min(subset(all.df, sex == "F")$wind))[1,] # low = 0.1388584   0.1159332   0.1654686     shy
-subset(all.df, sex == "F" & wind ==  max(subset(all.df, sex == "F")$wind))[1,] # high = 0.103329  0.08051051   0.1316886     shy
+subset(all.df, sex == "F" & wind ==  min(subset(all.df, sex == "F")$wind))[1,] # low = 0.1368369   0.1204733   0.1550313    shy
+subset(all.df, sex == "F" & wind ==  max(subset(all.df, sex == "F")$wind))[1,] # high = 0.1094859  0.09173325   0.1301817     shy
 
-subset(all.df, sex == "F" & wind ==  min(subset(all.df, sex == "F")$wind))[2,] # low = 0.1256671  0.09206856   0.1692412    bold
-subset(all.df, sex == "F" & wind ==  max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1243336  0.09902084   0.1550039    bold
+subset(all.df, sex == "F" & wind ==  min(subset(all.df, sex == "F")$wind))[2,] # low = 0.128819   0.1120257   0.1477109    bold
+subset(all.df, sex == "F" & wind ==  max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1173012  0.09621916   0.1422753   bold
 
 # Male values
-subset(all.df, sex == "M" & wind ==  min(subset(all.df, sex == "M")$wind))[1,] # low =  0.1354298   0.1102486    0.165294     shy
-subset(all.df, sex == "M" & wind ==  max(subset(all.df, sex == "M")$wind))[1,] # high = 0.1901425   0.1240988   0.2800944     shy
+subset(all.df, sex == "M" & wind ==  min(subset(all.df, sex == "M")$wind))[1,] # low =  0.1345865   0.1140449   0.1581676      shy
+subset(all.df, sex == "M" & wind ==  max(subset(all.df, sex == "M")$wind))[1,] # high = 0.1239896  0.09748389   0.1564528    shy
 
-subset(all.df, sex == "M" & wind ==  min(subset(all.df, sex == "M")$wind))[2,] # low = 0.04271847  0.02610382  0.06915713    bold
-subset(all.df, sex == "M" & wind ==  max(subset(all.df, sex == "M")$wind))[2,] # high =  0.1433595   0.1153959   0.1767454    bold
+subset(all.df, sex == "M" & wind ==  min(subset(all.df, sex == "M")$wind))[2,] # low = 0.1419913   0.1191541   0.1683689    bold
+subset(all.df, sex == "M" & wind ==  max(subset(all.df, sex == "M")$wind))[2,] # high =  0.06506295  0.04966255  0.08481282   bold
 
 
 
@@ -296,7 +295,7 @@ for (i in 1:3) {
       geom_line(size = 1, aes(col = persCat)) + 
       theme_bw() + ylab("Transition probability") +
       scale_x_continuous(limits=c(0, 23)) +
-      #scale_y_continuous(breaks = scales::pretty_breaks(n = 5)) +
+      scale_y_continuous( limits = c(0,0.3)) +
       xlab("Wind speed (ms-1)") +
       theme(axis.text.x=element_text(size=15), 
             axis.text.y=element_text(size=15), 
@@ -361,7 +360,7 @@ tick <- Sys.time()
 tick-tock
 
 #save(ci.list_F_bydir, file = "Data_outputs/female_speedtransitionbydir_CIs.R")
-load("Data_outputs/female_speedtransitionbydir_CIs.R")
+#load("Data_outputs/female_speedtransitionbydir_CIs.R")
 
 # Extract means, upper and lower bounds and put into separate lists
 means.f_speed <- lapply(ci.list_F_bydir, '[[', 1) 
@@ -398,7 +397,7 @@ tick-tock
 
 
 #save(ci.list_M_bydir, file = "Data_outputs/male_speedtransitionbydir_CIs.R")
-load("Data_outputs/male_speedtransitionbydir_CIs.R")
+#load("Data_outputs/male_speedtransitionbydir_CIs.R")
 
 # extract means, upper and lower bounds and put into separate lists
 means.m_speed <- lapply(ci.list_M_bydir, '[[', 1) 

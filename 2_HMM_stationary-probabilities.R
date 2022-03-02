@@ -86,7 +86,7 @@ file.in <- paste0("./Data_outputs/", paste0("F_mod_", 8, ".RData"))
 load(file = file.in)
 f.mod <- model
 
-file.in <- paste0("./Data_outputs/", paste0("M_mod_", 6, ".RData"))
+file.in <- paste0("./Data_outputs/", paste0("M_mod_", 8, ".RData"))
 load(file = file.in)
 m.mod <- model
 
