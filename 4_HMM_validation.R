@@ -4,8 +4,7 @@
 
 # 1. EXPERTLY VALIDATED TRACKS --------------------------------------------
 
-library(momentuHMM); library(data.table); library(dplyr); library(lubridate)
-
+library(momentuHMM); library(data.table); library(dplyr); library(lubridate); library(caret)
 #### Load best models and label states ####
 
 ## Load GPS data and get step lengths/turning angles for viterbi algorithm
@@ -18,8 +17,8 @@ all_data$DateTime <- as.POSIXct(all_data$DateTime, format = "%Y-%m-%d %H:%M:%S")
 
 all_data <- all_data[order(all_data$ID, all_data$DateTime),]
 
-all_data[,c(1,2,3,9,10)] <- lapply(all_data[,c(1,2,3,9,10)], as.factor) # ring, sex, year, LoD, ID
-all_data[,c(4,5,7,8,11)] <- lapply(all_data[,c(4,5,7,8,11)], as.numeric) # lon, lat, windsp, winddir, mean_blup_logit
+all_data[,c(1,3,4,9,10)] <- lapply(all_data[,c(1,3,4,9,10)], as.factor) # ring, sex, year, LoD, ID
+all_data[,c(5,6,7,8,11)] <- lapply(all_data[,c(5,6,7,8,11)], as.numeric) # lon, lat, windsp, winddir, mean_blup_logit
 
 all_data <- subset(all_data, !is.na(WindDir))
 
@@ -31,7 +30,7 @@ all_data.prepped <- subset(all_data.prepped, step < 40)
 
 
 # Males
-file.in <- paste0("./Data_outputs/", paste0("M_mod_", 6, ".RData"))
+file.in <- paste0("./Data_outputs/", paste0("M_mod_", 8, ".RData"))
 load(file = file.in)
 m.best.mod <- model
 
@@ -58,7 +57,7 @@ female_data$State[female_data$State == 3] <- "Rest"
 
 ## Bind together + extract relevant columns
 gps_hmm <- rbind(female_data, male_data)
-gps_hmm <- gps_hmm[,c(1, 4, 5, 6, 7, 12, 13, 14)] # ID Ring Sex Year DateTime Longitude Latitude State
+gps_hmm <- gps_hmm[,c(1, 4, 5, 6, 7, 14, 15, 16)] # ID Ring DateTime Sex Year Longitude Latitude State
 colnames(gps_hmm)[8] <- "State_HMM"
 
 # Get ringYr column for comparison
@@ -77,9 +76,9 @@ gc()
 
 gps_manual <- read.csv("Data_inputs/WAAL_gps_2020-2021_manualStates.csv")
 
+colnames(gps_manual)[1] <- "Ring"
 gps_manual$Ring <- as.character(gps_manual$Ring)
 gps_manual$DateTime <- as.POSIXct(gps_manual$DateTime, format = "%d/%m/%Y %H:%M")
-gps_manual$BirdId <- NULL
 colnames(gps_manual)[8] <- "state_manual"
 
 # Get ringYr column for comparison
@@ -92,15 +91,12 @@ valBirds <- unique(gps_manual$RingYr)
 gps_hmm.subset <- subset(gps_hmm, RingYr %in% valBirds)
 
 ## Merge to nearest minute
-
 setkey(setDT(gps_hmm.subset), "Ring", "DateTime")
 setkey(setDT(gps_manual), "Ring", "DateTime")
 gps_comp <- as.data.frame(gps_hmm.subset[gps_manual, roll = "nearest"])
 
 
 # Merge data
-gps_comp <- merge(gps_manual, gps_hmm.subset, by = c("Ring", "DateTime.5mins"))
-
 gps_comp$state_manual[gps_comp$state_manual == 3] <- "Rest"
 gps_comp$state_manual[gps_comp$state_manual == 2] <- "Search"
 gps_comp$state_manual[gps_comp$state_manual == 1] <- "Travel"
@@ -111,12 +107,15 @@ gps_comp <- subset(gps_comp, !is.na(validation))
 
 ### Compute accuracy
 
-# Overall
-sum(gps_comp$validation)/nrow(gps_comp)  
-sum(gps_comp$validation[gps_comp$State_HMM == "Travel"])/nrow(gps_comp[gps_comp$State_HMM == "Travel",]) 
-sum(gps_comp$validation[gps_comp$State_HMM == "Search"])/nrow(gps_comp[gps_comp$State_HMM == "Search",]) 
-sum(gps_comp$validation[gps_comp$State_HMM == "Rest"])/nrow(gps_comp[gps_comp$State_HMM == "Rest",]) 
+# Convert to factors
+gps_comp$State_HMM <- as.factor(gps_comp$State_HMM)
+gps_comp$state_manual <- as.factor(gps_comp$state_manual)
 
+## Compute confusion matrix
+confusionMatrix(gps_comp$State_HMM, gps_comp$state_manual)
+
+tab <- table(gps_comp$State_HMM, gps_comp$state_manual)
+tab <- tab / rowSums(tab)
 
 
 # 2. PERMUTATION - RUN MODELS ------------------------------------------------
@@ -189,6 +188,8 @@ for (i in (n.iter3+1):n.iter4) {
   uniqueRing <- unique(data.R$Ring) # gives number of unique individuals
   boldSample <- sample(data.R$mean_BLUP_logit, size = length(uniqueRing)) # sample boldness estimates
   data.R$mean_BLUP_logit <- rep(boldSample, ringLengths) # repeat sampled estimate over run of individuals
+  
+  write.csv(data.R, file = paste0("Data_outputs/data_randomised-", i, ".csv"), row.names = F)
   
 }
 
