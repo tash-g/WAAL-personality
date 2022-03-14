@@ -91,6 +91,109 @@ load(file = file.in)
 m.mod <- model
 
 
+# GET STATIONARY PROBABILITIES FOR AVERAGE SPEED AND DIRECTION --------
+
+## Predict wind speed for average wind direction which is 75 degrees relative to bird direction, 
+## average wind speed and for daylight hours when birds are most active, for top/bottom 10%
+## boldness scores
+
+# Get covariate data
+female_sub <- subset(f.mod$data, mean_BLUP_logit > quantile(mean_BLUP_logit, probs = 0.90) | 
+                       mean_BLUP_logit < quantile(mean_BLUP_logit, probs = 0.10))
+pers.f <- unique(female_sub$mean_BLUP_logit)
+
+male_sub <- subset(m.mod$data, mean_BLUP_logit > quantile(mean_BLUP_logit, probs = 0.90) | 
+                       mean_BLUP_logit < quantile(mean_BLUP_logit, probs = 0.10))
+pers.m <- unique(male_sub$mean_BLUP_logit)
+
+cov.f <- data.frame(LoD = rep("L"), WindDir = rep(75), WindSp = mean(f.mod$data$WindSp), mean_BLUP_logit = pers.f)
+cov.m <- data.frame(LoD = rep("L"), WindDir = rep(75), WindSp = mean(m.mod$data$WindSp), mean_BLUP_logit = pers.m)
+cov.f$LoD <- as.factor(cov.f$LoD)
+cov.m$LoD <- as.factor(cov.m$LoD)
+
+# Get stationary probs (gives for each row of covariates dataset)
+s.f <- as.data.frame(stationary(model = f.mod, covs = cov.f))
+s.m <- as.data.frame(stationary(model = m.mod, covs = cov.m))
+
+# Create confidence intervals around stationary probabilities
+stat.f <- ci.stationary(model = f.mod, cov = cov.f, alpha = 0.95) 
+stat.m <- ci.stationary(model = m.mod, cov = cov.m, alpha = 0.95) 
+
+
+# Combine into dataframe for plotting
+prob_cov.f <- cbind(s.f, cov.f)
+prob_cov.m <- cbind(s.m, cov.m)
+
+prob.f <- tidyr::gather(prob_cov.f, state, prob, travel:rest, factor_key=TRUE)
+prob.m <- tidyr::gather(prob_cov.m, state, prob, travel:rest, factor_key=TRUE)
+
+stat.df <- rbind(prob.f, prob.m)
+
+lwr.f <- tidyr::gather(stat.f[[1]], state, lwr, travel:rest, factor_key = T)$lwr
+lwr.m <- tidyr::gather(stat.m[[1]], state, lwr, travel:rest, factor_key = T)$lwr
+
+lwr <- c(lwr.f, lwr.m)
+
+upr.f <- tidyr::gather(stat.f[[2]], state, lwr, travel:rest, factor_key = T)$lwr
+upr.m <- tidyr::gather(stat.m[[2]], state, lwr, travel:rest, factor_key = T)$lwr
+
+upr <- c(upr.f, upr.m)
+
+stat.df$lwr <- lwr
+stat.df$upr <- upr
+stat.df$sex <- c(rep("F", nrow(prob.f)), rep("M", nrow(prob.m)))
+stat.df$pers <- ifelse(stat.df$mean_BLUP_logit < 0, "shy", "bold")
+
+stat.df[,c(9,10)] <- lapply(stat.df[,c(9,10)], as.factor)
+
+#save(stat.df, file = "Data_outputs/stationary_probs_SPEED.RData")
+# load("Data_outputs/stationary_probs_SPEED.RData")
+
+
+### Get activity budgets
+
+## FEMALE
+# Shy
+aggregate(subset(stat.df, sex == "F" & pers == "shy")$prob, 
+          by = list(subset(stat.df, sex == "F" & pers == "shy")$state), 
+          function(x) c(mean = mean(x), sd = sd(x)))
+
+# Group.1       x.mean         x.sd
+#1  travel 3.834809e-01 3.469296e-03
+#2  search 3.888724e-01 3.475480e-03
+#3    rest 2.276467e-01 1.126716e-05
+
+# Bold
+aggregate(subset(stat.df, sex == "F" & pers == "bold")$prob, 
+          by = list(subset(stat.df, sex == "F" & pers == "bold")$state), 
+          function(x) c(mean = mean(x), sd = sd(x)))
+
+#  Group.1       x.mean         x.sd
+#1  travel 0.4187173475 0.0028692971
+#2  search 0.3546400004 0.0026997175
+#3    rest 0.2266426521 0.0001698672
+
+## MALE
+# Shy
+aggregate(subset(stat.df, sex == "M" & pers == "shy")$prob, 
+          by = list(subset(stat.df, sex == "M" & pers == "shy")$state), 
+          function(x) c(mean = mean(x), sd = sd(x)))
+
+#  Group.1       x.mean         x.sd
+#1  travel 0.3432868452 0.0050787451
+#2  search 0.4180239225 0.0052225980
+#3    rest 0.2386892323 0.0001452717
+
+# Bold
+aggregate(subset(stat.df, sex == "M" & pers == "bold")$prob, 
+          by = list(subset(stat.df, sex == "M" & pers == "bold")$state), 
+          function(x) c(mean = mean(x), sd = sd(x)))
+
+## Group.1       x.mean         x.sd
+#1  travel 0.4005628067 0.0060598764
+#2  search 0.3616087252 0.0057211112
+#3    rest 0.2378284682 0.0003401336
+
 # GET STATIONARY PROBABILITIES BY SPEED FOR AVERAGE WIND DIRECTION --------
 
 min(f.mod$data$WindSp) # 0.05
@@ -187,6 +290,15 @@ ggplot(stat.df, aes(WindSp, prob)) + facet_wrap(.~sex, labeller=label_value) +
   guides(fill = FALSE)
 dev.off()
 
+
+
+# GET ESTIMATES OF TIME BUDGETS -------------------------------------------
+
+### FEMALES
+# SHY
+
+
+# BOLD
 
 
 # CALCULATE STATIONARY PROBABILITIES BY SPEED FOR TAILWIND/CROSSWIND/HEADWIND -------------------
