@@ -46,7 +46,7 @@ m.best.mod <- model
 
 # GET TRANSITION ESTIMATES BY SPEED FOR AVERAGE WIND DIRECTION -------------------------------------------
 
-## Average wind direction is 75 degrees relative to bird direction; plots are for daylight only
+## Average wind direction is 90 degrees relative to bird direction; plots are for daylight only
 ## Transition predictions are made separately for each sex and for the extremes of boldness score ('shy' and 'bold')
 
 ### FEMALES
@@ -58,7 +58,7 @@ cov.comb <- expand.grid(cov.ws, cov.pers)
 
 # Make the dataframe for predictions
 cov.f_speed <- data.frame(WindSp=cov.comb$Var1, mean_BLUP_logit = cov.comb$Var2, LoD = "L", 
-                        WindDir = 75)
+                        WindDir = 90)
 cov.f_speed$LoD <- as.factor(as.character(cov.f_speed$LoD))
 cov.f_speed$WindSp <- as.numeric(as.character(cov.f_speed$WindSp))
 cov.f_speed$WindDir <- as.numeric(as.character(cov.f_speed$WindDir))
@@ -97,7 +97,7 @@ cov.comb <- expand.grid(cov.ws, cov.pers)
 
 # Construct dataframe for predictions
 cov.m_speed <- data.frame(WindSp=cov.comb$Var1, mean_BLUP_logit = cov.comb$Var2, LoD = "L", 
-                    WindDir = 75)
+                    WindDir = 90)
 cov.m_speed$LoD <- as.factor(as.character(cov.m_speed$LoD))
 cov.m_speed$WindSp <- as.numeric(as.character(cov.m_speed$WindSp))
 cov.m_speed$WindDir <- as.numeric(as.character(cov.m_speed$WindDir))
@@ -152,18 +152,18 @@ all.df <- rbind(df.m, df.f)
 
 
 # Isolate probabilities
-subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[1,] # low = 0.08793645  0.07528292   0.1024811     shy
-subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[1,] # high = 0.173204   0.1387598    0.214073     shy
+subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[1,] # low =  0.09179148  0.07864455   0.1068812     shy
+subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[1,] # high = 0.1800591   0.1445119   0.2220804     shy
 
-subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[2,] # low = 0.1077316     0.09125   0.1267748    bold
-subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1514059   0.1170688   0.1936059    bold
+subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[2,] # low = 0.1123475  0.09527549   0.1320322    bold
+subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1575626    0.122026   0.2010781    bold
 
 
 # Male values
-subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[1,] # low = 0.1113753  0.09420548   0.1312212     shy
-subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[1,] # high = 0.1464807   0.1114582   0.1901529    shy
+subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[1,] # low = 0.1158122  0.09806252   0.1362893     shy
+subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[1,] # high = 0.1520768   0.1158979   0.1970324     shy
 
-subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[2,] # high = 0.08582071  0.07097483   0.1034262   
+subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[2,] # high = 0.08934195  0.07395415   0.1075596    bold
 subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[2,] # low = 0.1451251   0.1077956   0.1925913    bold
 
 
@@ -193,18 +193,18 @@ df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy
 all.df <- rbind(df.m, df.f)
 
 # Isolate probabilities
-subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[1,] # low = 0.09053241  0.07876882   0.1038548     shy
-subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[1,] # high = 0.1766198   0.1479212   0.2095172     shy
+subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[1,] # low = 0.09167453  0.07978568   0.1051325     shy
+subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[1,] # high = 0.1786108   0.1496534    0.211776     shy
 
-subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[2,] # low =  0.1531855   0.1332452   0.1755058     bold
-subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1459901   0.1190203   0.1778376   bold
+subset(all.df, sex == "F" & wind == min(subset(all.df, sex == "F")$wind))[2,] # low =  0.1552796   0.1351284   0.1778181    bold
+subset(all.df, sex == "F" & wind == max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1475901   0.1203719   0.1797056    bold
 
 # Male values
-subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[1,] # low =  0.0566238  0.04669046  0.06851855     shy
-subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[1,] # high = 0.2279502   0.1804789   0.2835871      shy
+subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[1,] # low =  0.05738632  0.04732811  0.06942633     shy
+subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[1,] # high =  0.2300591   0.1822642   0.2860037     shy
 
-subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[2,] # low = 0.130342   0.1076158   0.1570229     bold
-subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[2,] # high = 0.1235306  0.09338255   0.1616761     bold
+subset(all.df, sex == "M" & wind == min(subset(all.df, sex == "M")$wind))[2,] # low =  0.131953   0.1089946   0.1588849    bold
+subset(all.df, sex == "M" & wind == max(subset(all.df, sex == "M")$wind))[2,] # high = 0.1248796  0.09443934   0.1633615    bold
 
 ## Travel - search transitions
 # Get transition data
@@ -231,18 +231,18 @@ all.df <- rbind(df.m, df.f)
 
 
 # Isolate probabilities
-subset(all.df, sex == "F" & wind ==  min(subset(all.df, sex == "F")$wind))[1,] # low = 0.1368369   0.1204733   0.1550313    shy
-subset(all.df, sex == "F" & wind ==  max(subset(all.df, sex == "F")$wind))[1,] # high = 0.1094859  0.09173325   0.1301817     shy
+subset(all.df, sex == "F" & wind ==  min(subset(all.df, sex == "F")$wind))[1,] # low = 0.1369656   0.1206099   0.1551479     shy
+subset(all.df, sex == "F" & wind ==  max(subset(all.df, sex == "F")$wind))[1,] # high = 0.1095922  0.09183495   0.1302904     shy
 
-subset(all.df, sex == "F" & wind ==  min(subset(all.df, sex == "F")$wind))[2,] # low = 0.128819   0.1120257   0.1477109    bold
-subset(all.df, sex == "F" & wind ==  max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1173012  0.09621916   0.1422753   bold
+subset(all.df, sex == "F" & wind ==  min(subset(all.df, sex == "F")$wind))[2,] # low = 0.1289413   0.1121517   0.1478258    bold
+subset(all.df, sex == "F" & wind ==  max(subset(all.df, sex == "F")$wind))[2,] # high = 0.1174141  0.09632364   0.1423947    bold
 
 # Male values
-subset(all.df, sex == "M" & wind ==  min(subset(all.df, sex == "M")$wind))[1,] # low =  0.1345865   0.1140449   0.1581676      shy
-subset(all.df, sex == "M" & wind ==  max(subset(all.df, sex == "M")$wind))[1,] # high = 0.1239896  0.09748389   0.1564528    shy
+subset(all.df, sex == "M" & wind ==  min(subset(all.df, sex == "M")$wind))[1,] # low =  0.1340431   0.1135731   0.1575468     shy
+subset(all.df, sex == "M" & wind ==  max(subset(all.df, sex == "M")$wind))[1,] # high = 0.1234828  0.09710677    0.155787     shy
 
-subset(all.df, sex == "M" & wind ==  min(subset(all.df, sex == "M")$wind))[2,] # low = 0.1419913   0.1191541   0.1683689    bold
-subset(all.df, sex == "M" & wind ==  max(subset(all.df, sex == "M")$wind))[2,] # high =  0.06506295  0.04966255  0.08481282   bold
+subset(all.df, sex == "M" & wind ==  min(subset(all.df, sex == "M")$wind))[2,] # low = 0.1414229   0.1187179   0.1676441    bold
+subset(all.df, sex == "M" & wind ==  max(subset(all.df, sex == "M")$wind))[2,] # high =  0.06477923  0.04942928  0.08447239    bold
 
 
 
@@ -463,7 +463,7 @@ for(k in 1:3){
         
         dirPlot <- ggplot(all.df, aes(x = wind, y=mean)) + facet_wrap(~sex, labeller=labeller(sex=labels)) +
           geom_ribbon(size = 1, linetype = "blank", aes(ymin=lower_bound, ymax=upper_bound, col = persCat), alpha=0.15) + 
-          geom_line(size = 1, aes(col = persCat, linetype = persCat)) + 
+          geom_line(size = 1, aes(col = persCat)) + 
           theme_bw() + ylab("Transition probability") +
           scale_x_continuous(limits=c(0, 23)) +
           xlab("Wind speed (ms-1)") +
@@ -478,7 +478,8 @@ for(k in 1:3){
                 legend.position = "none") +
           scale_linetype_manual(name = "Personality", values=c("solid", "dashed"), labels = c("Bold", "Shy")) +
           scale_color_manual(name = "Personality", labels = c("Bold", "Shy"), values = c(bold_col, shy_col)) +
-          ggtitle(paste0(behaviour$state[i], " - > ", behaviour$state[j]))
+          ggtitle(paste0(behaviour$state[i], " - > ", behaviour$state[j])) +
+          scale_y_continuous(breaks = scales::pretty_breaks(n = 3), limits = c(0, 0.3))
         
         # Scale y as 0.5 - 1 for same behaviour -> same behaviour; scale 0 - 0.5 for same -> different 
         if (i == j) { dirPlot <- dirPlot + scale_y_continuous(breaks = scales::pretty_breaks(n = 5), limits = c(0.5, 1)) } else {

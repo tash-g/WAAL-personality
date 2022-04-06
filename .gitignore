@@ -4,3 +4,7 @@
 .Ruserdata
 Data_outputs/
 Figures/
+Workshop/
+Functions/
+Data_inputs/WAAL_mass-personality.csv
+Data_inputs/WAAL_size-metrics.csv

@@ -93,7 +93,7 @@ m.mod <- model
 
 # GET STATIONARY PROBABILITIES FOR AVERAGE SPEED AND DIRECTION --------
 
-## Predict wind speed for average wind direction which is 75 degrees relative to bird direction, 
+## Predict wind speed for average wind direction which is 90 degrees relative to bird direction, 
 ## average wind speed and for daylight hours when birds are most active, for top/bottom 10%
 ## boldness scores
 
@@ -106,8 +106,8 @@ male_sub <- subset(m.mod$data, mean_BLUP_logit > quantile(mean_BLUP_logit, probs
                        mean_BLUP_logit < quantile(mean_BLUP_logit, probs = 0.10))
 pers.m <- unique(male_sub$mean_BLUP_logit)
 
-cov.f <- data.frame(LoD = rep("L"), WindDir = rep(75), WindSp = mean(f.mod$data$WindSp), mean_BLUP_logit = pers.f)
-cov.m <- data.frame(LoD = rep("L"), WindDir = rep(75), WindSp = mean(m.mod$data$WindSp), mean_BLUP_logit = pers.m)
+cov.f <- data.frame(LoD = rep("L"), WindDir = rep(90), WindSp = mean(f.mod$data$WindSp), mean_BLUP_logit = pers.f)
+cov.m <- data.frame(LoD = rep("L"), WindDir = rep(90), WindSp = mean(m.mod$data$WindSp), mean_BLUP_logit = pers.m)
 cov.f$LoD <- as.factor(cov.f$LoD)
 cov.m$LoD <- as.factor(cov.m$LoD)
 
@@ -216,8 +216,8 @@ pers.m <- c(round(min(m.mod$data$mean_BLUP_logit), digits = 1),
             round(max(m.mod$data$mean_BLUP_logit), digits = 1))
 comb.m <- expand.grid(ws.m, pers.m)
 
-cov.f <- data.frame(LoD = rep("L"), WindDir = rep(75), WindSp = comb.f$Var1, mean_BLUP_logit = comb.f$Var2)
-cov.m <- data.frame(LoD = rep("L"), WindDir = rep(75), WindSp = comb.m$Var1, mean_BLUP_logit = comb.m$Var2)
+cov.f <- data.frame(LoD = rep("L"), WindDir = rep(90), WindSp = comb.f$Var1, mean_BLUP_logit = comb.f$Var2)
+cov.m <- data.frame(LoD = rep("L"), WindDir = rep(90), WindSp = comb.m$Var1, mean_BLUP_logit = comb.m$Var2)
 cov.f$LoD <- as.factor(cov.f$LoD)
 cov.m$LoD <- as.factor(cov.m$LoD)
 
@@ -292,15 +292,6 @@ dev.off()
 
 
 
-# GET ESTIMATES OF TIME BUDGETS -------------------------------------------
-
-### FEMALES
-# SHY
-
-
-# BOLD
-
-
 # CALCULATE STATIONARY PROBABILITIES BY SPEED FOR TAILWIND/CROSSWIND/HEADWIND -------------------
 
 # Get covariate data
@@ -359,7 +350,7 @@ stat.df[,c(9,10)] <- lapply(stat.df[,c(9,10)], as.factor)
 stat.df$pers_state <- as.factor(as.character(paste(stat.df$pers, stat.df$state, sep = "_")))
 
 # save(stat.df, file = "Data_outputs/stationary_probabilities_DIR.RData")
-# load("Data_output/stationary_probabilities_DIR.RData")
+# load("Data_outputs/stationary_probabilities_DIR.RData")
 
 
 
@@ -381,7 +372,7 @@ for (i in 1:length(dirs)){
     scale_fill_manual(values = c("grey0", "grey0", "grey0", "grey30", "grey30", "grey30", "grey60", "grey60", "grey60")) +
     geom_line(aes(colour = pers, linetype = state), size = 1.3) + 
     scale_linetype_manual(values=c("solid", "dotted", "dashed"),labels = c("Travel", "Search", "Rest"), name = "Behaviour") +
-    ylim(0, 1) +
+    ylim(0, 0.7) +
     scale_color_manual(name = "", labels = c("Bold", "Shy"), values = c(bold_col, shy_col)) +
     theme_bw() + ylab("Stationary probability")+
     scale_x_continuous(limits=c(0, 23)) + xlab(expression(paste("Wind speed (", ms^-1, ")", sep="")))+
