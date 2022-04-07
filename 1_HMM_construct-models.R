@@ -1,6 +1,9 @@
-### CITATION: This code is modified from scripts shared in Clay et al. 2020, J. Anim. Ecol.
+### CITATION: This code is modified from scripts shared in Clay et al. 2020, 
+### J. Anim. Ecol.
 
-### AIM: Run HMM combinations based on wind and personality predictors; use AIC to identify the best model
+### AIM: 
+### - Run HMM combinations based on wind and personality predictors 
+### - Use AIC comparison to identify best-supported model
 
 
 # Preamble ----------------------------------------------------------------
@@ -9,20 +12,22 @@ library(momentuHMM); library(ggplot2); library(dplyr)
 
 ### Create outputs folder
 out.path <- "./Data_outputs/"
-if(dir.exists(out.path) == FALSE){
+
+if(dir.exists(out.path) == FALSE) {
   dir.create(out.path)
 }
 
 ### LOAD IN TRACKS
-gps <- read.csv(file = "./Data_inputs/WAAL_GPS_2010-2021_personality_wind.csv", na.strings = "NA")
+gps <- read.csv(file = "./Data_inputs/WAAL_GPS_2010-2021_personality_wind.csv", 
+                na.strings = "NA")
 names(gps)[10] <- "ID"
 names(gps)[8] <- "WindDir"
 gps$DateTime <- as.POSIXct(gps$DateTime, format = "%Y-%m-%d %H:%M:%S")
 gps <- gps[order(gps$ID, gps$DateTime),]
 
 ## Isolate columns and specify types
-gps[,c(1,3,4,9,10)] <- lapply(gps[,c(1,3,4,9,10)], as.factor) # ring, sex, year, LoD, ID
-gps[,c(5:8,11)] <- lapply(gps[,c(5:8,11)], as.numeric) # Longitude, Latitude, WindSp, WindDir, mean_BLUP_logit
+gps[, c(1,3,4,9,10)] <- lapply(gps[, c(1,3,4,9,10)], as.factor) # ring, sex, year, LoD, ID
+gps[ ,c(5:8,11)] <- lapply(gps[,c(5:8,11)], as.numeric) # Longitude, Latitude, WindSp, WindDir, mean_BLUP_logit
 
 # Some NA wind directions, because we don't have bearings for the last fix of the trip
 gps <- subset(gps, !is.na(WindDir))
@@ -30,8 +35,9 @@ gps <- subset(gps, !is.na(WindDir))
 
 # INITIALISE HMM DATA ---------------------------------------------------------
 
-dat_OG <- prepData(gps, type= "LL", # longs and lats
-               coordNames = c("Longitude", "Latitude")) ## these are our names
+dat_OG <- prepData(gps,
+                   type = "LL", # longs and lats
+                   coordNames = c("Longitude", "Latitude")) ## these are our names
 head(dat_OG)
 
 
@@ -45,24 +51,24 @@ dat_OG <- subset(dat_OG, step < 40)
 ## Assign step lengths based on previously identified initial values
 shape_0 <- c(12.42, 4.10, 0.33)
 scale_0 <- c(3.62, 4.71, 0.17)
-stepPar0 <- c(shape_0,scale_0)
+stepPar0 <- c(shape_0, scale_0)
 
 ## Assigning turning angles based on previously identified initial values
 location_0 <- c(0.00302, 0.00343, 0.0291)
 concentration_0 <- c(50.79, 1.27, 44.02)
-anglePar0 <- c(location_0,concentration_0)
+anglePar0 <- c(location_0, concentration_0)
 
 
 ### Set 0s to very small numbers 
 dat <- dat_OG
 
 ind_zero <- which(dat$step == 0)
-if (length(ind_zero)>0){
-  dat$step[ind_zero] <- runif(length(ind_zero))/10000
+if (length(ind_zero) > 0) {
+  dat$step[ind_zero] <- runif(length(ind_zero)) / 10000
 }
 ind_zero <- which(dat$step == "NA")
-if (length(ind_zero)>0){
-  dat$step[ind_zero] <- runif(length(ind_zero))/10000
+if (length(ind_zero) > 0) {
+  dat$step[ind_zero] <- runif(length(ind_zero)) / 10000
 }
 
 dat <- na.omit(dat)
@@ -72,24 +78,30 @@ dat <- subset(dat, !is.na(step))
 
 # RUN THE NULL MODEL ------------------------------------------------------
 
-#  first run null models with no covariates on transition probabilities
+### First run null models with no covariates on transition probabilities
 
 stateNames <- c("travel","search", "rest")
 
 dat_male <- subset(dat, Sex == "M")
 dat_female <- subset(dat, Sex == "F")
 
-m1_M <- fitHMM(data=dat_male, nbStates=3,
-             dist=list(step="gamma",angle="vm"),
-             Par0=list(step=stepPar0, angle=anglePar0),
-             estAngleMean = list(angle=TRUE),
-             stateNames = stateNames)
+m1_M <- fitHMM(
+  data = dat_male,
+  nbStates = 3,
+  dist = list(step = "gamma", angle = "vm"),
+  Par0 = list(step = stepPar0, angle = anglePar0),
+  estAngleMean = list(angle = TRUE),
+  stateNames = stateNames
+)
 
-m1_F <- fitHMM(data=dat_female, nbStates=3,
-               dist=list(step="gamma",angle="vm"),
-               Par0=list(step=stepPar0, angle=anglePar0),
-               estAngleMean = list(angle=TRUE),
-               stateNames = stateNames)
+m1_F <- fitHMM(
+  data = dat_female,
+  nbStates = 3,
+  dist = list(step = "gamma", angle = "vm"),
+  Par0 = list(step = stepPar0, angle = anglePar0),
+  estAngleMean = list(angle = TRUE),
+  stateNames = stateNames
+)
 
 save(m1_M, file = "Data_outputs/M_mod_1.RData")
 save(m1_F, file = "Data_outputs/F_mod_1.RData")
@@ -107,7 +119,8 @@ acf(dat$step[!is.na(dat$step)], lag.max = 300)
 
 # SET UP FORMULA FOR ALL MODEL COMBINATIONS -------------------------------
 
-## Run next couple of models for males and females separately - make sure to change model names as appropriate
+### Run next couple of models for males and females separately - 
+### make sure to change model names as appropriate
 
 ### CURRENTLY RUNNING FOR FEMALES ###
 
@@ -140,10 +153,14 @@ formula[[20]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + Win
 formula[[21]] <- ~ WindSp + mean_BLUP_logit + LoD + WindDir + WindDir:mean_BLUP_logit + WindSp:WindDir
 
 
-# this function gets starting values for each model from existing null model fit for a specified covariate formula
+# This function gets starting values for each model from existing null model 
+# and fits for a specified covariate formula
 Par <- list()
-for (i in 2:length(formula)){
-  Par[[i]] <- getPar0(model=model_run, nbStates=3, formula = formula[[i]])
+for (i in 2:length(formula)) {
+  Par[[i]] <-
+    getPar0(model = model_run,
+            nbStates = 3,
+            formula = formula[[i]])
 }
 
 
@@ -152,19 +169,27 @@ for (i in 2:length(formula)){
 
 ## the following code iterates through and runs all 40 models, pasting each out in turn
 
-stateNames<-c("travel","search", "rest")
+stateNames <- c("travel","search", "rest")
 
 # Specify output lists of length formula
-m.list <- vector(mode = "list", length =length(formula))
+m.list <- vector(mode = "list", length = length(formula))
 
 for (i in 2:length(formula)) {
     print(i)
-    m.list[[i]] <- fitHMM(data=data_run, nbStates=3,
-                            dist=list(step="gamma",angle="vm"),
-                            Par0=list(step=Par[[i]]$Par$step, angle=Par[[i]]$Par$angle,delta0 = Par[[i]]$delta),
-                            estAngleMean = list(angle=TRUE), beta0 = Par[[i]]$beta,
-                            stateNames = stateNames, 
-                            formula = formula[[i]])
+  m.list[[i]] <- fitHMM(
+    data = data_run,
+    nbStates = 3,
+    dist = list(step = "gamma", angle = "vm"),
+    Par0 = list(
+      step = Par[[i]]$Par$step,
+      angle = Par[[i]]$Par$angle,
+      delta0 = Par[[i]]$delta
+    ),
+    estAngleMean = list(angle = TRUE),
+    beta0 = Par[[i]]$beta,
+    stateNames = stateNames,
+    formula = formula[[i]]
+  )
     model <- m.list[[i]]
     file.out <- paste0("./Data_outputs/", paste0(sex_initial, "_mod_", i, ".RData"))
     save(model, file = file.out)
@@ -177,13 +202,13 @@ for (i in 2:length(formula)) {
 
 ### Create figures folder
 fig.path <- "./Figures/"
-if(dir.exists(fig.path) == FALSE){
+if(dir.exists(fig.path) == FALSE) {
   dir.create(fig.path)
 }
 
 # Specifying output lists of length formula
-m.list <- vector(mode = "list", length =length(formula))
-out.df <- vector(mode = "list", length =length(formula))
+m.list <- vector(mode = "list", length = length(formula))
+out.df <- vector(mode = "list", length = length(formula))
 
 for (i in 1:length(formula)) {
   print(i)
@@ -202,7 +227,7 @@ for (i in 1:length(formula)) {
   pr <- pseudoRes(m.list[[i]])
   
   # Step length
-  par(mfrow=c(1,1))
+  par(mfrow = c(1,1))
   ylimit <- qnorm((1 + 0.95)/2)/sqrt(length(pr$stepRes[!is.na(pr$stepRes)])) + 1
   acf(pr$stepRes[is.finite(pr$stepRes)],lag.max = 300)
   name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_acf_step.png"))
@@ -210,7 +235,7 @@ for (i in 1:length(formula)) {
   dev.off()
   
   # Turning angle
-  par(mfrow=c(1,1))
+  par(mfrow = c(1,1))
   acf(pr$angleRes[!is.na(pr$angleRes)],lag.max = 300)
   name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_acf_angle.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
@@ -222,7 +247,7 @@ for (i in 1:length(formula)) {
                        lod = m.list[[i]]$data$LoD)
   res.df <- subset(res.df, is.finite(stepres))
   
-  par(mfrow=c(2,2))
+  par(mfrow = c(2,2))
   boxplot(stepres ~ lod, data = res.df)
   plot(stepres ~ ws, data = res.df)
   boxplot(angleres ~ lod, data = res.df)
@@ -260,9 +285,12 @@ for (i in 1:length(formula)) {
   ## Removing intercept to plot
   beta.df2 <- subset(beta.df, Covariates != "(Intercept)",)
   
-  pl <- ggplot(beta.df2, aes(Covariates, Est)) + geom_hline(yintercept=0, linetype="dashed", size=1)+
-    geom_point(aes(colour = Transitions),position=pd)+
-    geom_errorbar(aes(ymin=Lwr, ymax=Upr, colour = Transitions), width=.8, position=pd) +theme_bw()
+  pl <- ggplot(beta.df2, aes(Covariates, Est)) + 
+    geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
+    geom_point(aes(colour = Transitions),position = pd) +
+    geom_errorbar(aes(ymin = Lwr, ymax = Upr, colour = Transitions), 
+                  width = 0.8, position = pd) +
+    theme_bw()
   print(pl)
   name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_coefficients.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
@@ -276,7 +304,7 @@ all.out <- all.out[order(all.out$AIC),]
 
 # Print out AIC table
 out.path <- paste0("./Data_outputs/AIC_table_", sex_initial, ".csv")
-write.csv(all.out, out.path, row.names=T)
+write.csv(all.out, out.path, row.names = T)
 
 
 

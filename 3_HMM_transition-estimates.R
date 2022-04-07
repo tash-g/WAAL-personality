@@ -108,11 +108,11 @@ head(cov.m_speed)
 tock <- Sys.time()
 ci.list_M <- lapply(1:nrow(cov.m_speed), function(x) {
   print(x)
-  cov.sub.df <- cov.m_speed[x,]
-  return(CIreal(m.best.mod,covs=cov.sub.df)$gamma)
+  cov.sub.df <- cov.m_speed[x, ]
+  return(CIreal(m.best.mod, covs = cov.sub.df)$gamma)
 })
 tick <- Sys.time()
-tick-tock
+tick - tock
 
 
 #save(ci.list_M, file = "Data_outputs/male_speedtransition_CIs.R")
@@ -133,20 +133,42 @@ state1 <- 3
 state2 <- 2
 nb_states = 3
 
-m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
-m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
-m.ub <- unlist(lapply(ub.m_speed,'[[',nb_states*(state2-1)+state1))
-df.m <- data.frame(sex = "M", pers = cov.m_speed$mean_BLUP_logit, dir = cov.m_speed$WindDir,
-                   wind=cov.m_speed$WindSp, mean = m.means, lower_bound = m.lb, upper_bound = m.ub)
-df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1], "shy", "bold")
+m.means <- unlist(lapply(means.m_speed, '[[', nb_states * (state2 - 1) + state1))
+m.lb <- unlist(lapply(lb.m_speed, '[[', nb_states * (state2 - 1) + state1))
+m.ub <- unlist(lapply(ub.m_speed, '[[', nb_states * (state2 - 1) + state1))
+
+df.m <- data.frame(
+  sex = "M",
+  pers = cov.m_speed$mean_BLUP_logit,
+  dir = cov.m_speed$WindDir,
+  wind = cov.m_speed$WindSp,
+  mean = m.means,
+  lower_bound = m.lb,
+  upper_bound = m.ub
+)
+
+df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1],
+                       "shy",
+                       "bold")
 
 
-f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
-f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
-f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
-df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, dir = cov.f_speed$WindDir,
-                   wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
-df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
+f.means <- unlist(lapply(means.f_speed, '[[', nb_states * (state2 - 1) + state1)) 
+f.lb <- unlist(lapply(lb.f_speed, '[[', nb_states * (state2 - 1) + state1))
+f.ub <- unlist(lapply(ub.f_speed, '[[', nb_states * (state2 - 1) + state1))
+
+df.f <- data.frame(
+  sex = "F",
+  pers = cov.f_speed$mean_BLUP_logit,
+  dir = cov.f_speed$WindDir,
+  wind = cov.f_speed$WindSp,
+  mean = f.means,
+  lower_bound = f.lb,
+  upper_bound = f.ub
+)
+
+df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1],
+                       "shy",
+                       "bold")
 
 all.df <- rbind(df.m, df.f)
 
@@ -175,20 +197,39 @@ state1 <- 2
 state2 <- 1
 nb_states = 3
 
-m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
-m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
-m.ub <- unlist(lapply(ub.m_speed,'[[',nb_states*(state2-1)+state1))
-df.m <- data.frame(sex = "M", pers = cov.m_speed$mean_BLUP_logit, dir = cov.m_speed$WindDir,
-                   wind=cov.m_speed$WindSp, mean = m.means, lower_bound = m.lb, upper_bound = m.ub)
+m.means <- unlist(lapply(means.m_speed, '[[', nb_states * (state2 - 1) + state1)) 
+m.lb <- unlist(lapply(lb.m_speed, '[[', nb_states * (state2 - 1) + state1))
+m.ub <- unlist(lapply(ub.m_speed, '[[', nb_states * (state2 - 1) + state1))
+
+df.m <- data.frame(
+  sex = "M",
+  pers = cov.m_speed$mean_BLUP_logit,
+  dir = cov.m_speed$WindDir,
+  wind = cov.m_speed$WindSp,
+  mean = m.means,
+  lower_bound = m.lb,
+  upper_bound = m.ub
+)
+
 df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1], "shy", "bold")
 
 
-f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
-f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
-f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
-df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, dir = cov.f_speed$WindDir,
-                   wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
-df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1], "shy", "bold")
+f.means <- unlist(lapply(means.f_speed, '[[', nb_states * (state2 - 1) + state1)) 
+f.lb <- unlist(lapply(lb.f_speed, '[[', nb_states * (state2 - 1) + state1))
+f.ub <- unlist(lapply(ub.f_speed, '[[', nb_states * (state2 - 1) + state1))
+df.f <- data.frame(
+  sex = "F",
+  pers = cov.f_speed$mean_BLUP_logit,
+  dir = cov.f_speed$WindDir,
+  wind = cov.f_speed$WindSp,
+  mean = f.means,
+  lower_bound = f.lb,
+  upper_bound = f.ub
+)
+
+df.f$persCat <- ifelse(df.f$pers == unique(cov.f_speed$mean_BLUP_logit)[1],
+                       "shy",
+                       "bold")
 
 all.df <- rbind(df.m, df.f)
 
@@ -212,16 +253,27 @@ state1 <- 1
 state2 <- 2
 nb_states = 3
 
-m.means <- unlist(lapply(means.m_speed,'[[',nb_states*(state2-1)+state1)) 
-m.lb <- unlist(lapply(lb.m_speed,'[[',nb_states*(state2-1)+state1))
-m.ub <- unlist(lapply(ub.m_speed,'[[',nb_states*(state2-1)+state1))
-df.m <- data.frame(sex = "M", pers = cov.m_speed$mean_BLUP_logit, dir = cov.m_speed$WindDir,
-                   wind=cov.m_speed$WindSp, mean = m.means, lower_bound = m.lb, upper_bound = m.ub)
-df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1], "shy", "bold")
+m.means <- unlist(lapply(means.m_speed, '[[', nb_states * (state2 - 1) + state1)) 
+m.lb <- unlist(lapply(lb.m_speed, '[[', nb_states * (state2 - 1) + state1))
+m.ub <- unlist(lapply(ub.m_speed, '[[', nb_states * (state2 - 1) + state1))
+
+df.m <- data.frame(
+  sex = "M",
+  pers = cov.m_speed$mean_BLUP_logit,
+  dir = cov.m_speed$WindDir,
+  wind = cov.m_speed$WindSp,
+  mean = m.means,
+  lower_bound = m.lb,
+  upper_bound = m.ub
+)
+
+df.m$persCat <- ifelse(df.m$pers == unique(cov.m_speed$mean_BLUP_logit)[1],
+                       "shy",
+                       "bold")
 
 
-f.means <- unlist(lapply(means.f_speed,'[[',nb_states*(state2-1)+state1)) 
-f.lb <- unlist(lapply(lb.f_speed,'[[',nb_states*(state2-1)+state1))
+f.means <- unlist(lapply(means.f_speed, '[[', nb_states * (state2 - 1) + state1)) 
+f.lb <- unlist(lapply(lb.f_speed, '[[', nb_states * (state2 - 1) + state1))
 f.ub <- unlist(lapply(ub.f_speed,'[[',nb_states*(state2-1)+state1))
 df.f <- data.frame(sex = "F", pers = cov.f_speed$mean_BLUP_logit, dir = cov.f_speed$WindDir,
                    wind=cov.f_speed$WindSp, mean = f.means, lower_bound = f.lb, upper_bound = f.ub)
