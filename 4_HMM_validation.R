@@ -4,118 +4,220 @@
 
 # 1. EXPERTLY VALIDATED TRACKS --------------------------------------------
 
-library(momentuHMM); library(data.table); library(dplyr); library(lubridate); library(caret)
-#### Load best models and label states ####
+# Define the packages
+packages <- c("data.table", "momentuHMM", "dplyr", "lubridate", "caret", "raster",
+              "rgdal", "rnaturalearth", "rnaturalearthdata", "ggpubr")
 
-## Load GPS data and get step lengths/turning angles for viterbi algorithm
+# Install packages not yet installed - change lib to library path
+#installed_packages <- packages %in% rownames(installed.packages())
 
-all_data <- read.csv("./Data_inputs/WAAL_GPS_2010-2021_personality_wind.csv")
+#if (any(installed_packages == FALSE)) {
+#  install.packages(packages[!installed_packages], lib = "C:/Users/libraryPath")
+#}
 
-names(all_data)[10] <- "ID"
-names(all_data)[8] <- "WindDir"
-all_data$DateTime <- as.POSIXct(all_data$DateTime, format = "%Y-%m-%d %H:%M:%S")
+# Load packages
+invisible(lapply(packages, library, character.only = TRUE))
 
-all_data <- all_data[order(all_data$ID, all_data$DateTime),]
-
-all_data[,c(1,3,4,9,10)] <- lapply(all_data[,c(1,3,4,9,10)], as.factor) # ring, sex, year, LoD, ID
-all_data[,c(5,6,7,8,11)] <- lapply(all_data[,c(5,6,7,8,11)], as.numeric) # lon, lat, windsp, winddir, mean_blup_logit
-
-all_data <- subset(all_data, !is.na(WindDir))
-
-all_data.prepped <- prepData(all_data, type= "LL", 
-                   coordNames = c("Longitude", "Latitude")) 
-
-all_data.prepped <- subset(all_data.prepped, !is.na(angle))
-all_data.prepped <- subset(all_data.prepped, step < 40)
-
-
-# Males
-file.in <- paste0("./Data_outputs/", paste0("M_mod_", 8, ".RData"))
-load(file = file.in)
-m.best.mod <- model
-
-male_data <- subset(all_data.prepped, Sex == "M")
-male_data$State <- momentuHMM::viterbi(m.best.mod)
-
-male_data$State[male_data$State == 1] <- "Travel"
-male_data$State[male_data$State == 2] <- "Search"
-male_data$State[male_data$State == 3] <- "Rest"
-
-
-# Females
-file.in <- paste0("./Data_outputs/", paste0("F_mod_", 8, ".RData"))
-load(file = file.in)
-f.best.mod <- model
-
-female_data <- subset(all_data.prepped, Sex == "F")
-female_data$State <- momentuHMM::viterbi(f.best.mod)
-
-female_data$State[female_data$State == 1] <- "Travel"
-female_data$State[female_data$State == 2] <- "Search"
-female_data$State[female_data$State == 3] <- "Rest"
-
-
-## Bind together + extract relevant columns
-gps_hmm <- rbind(female_data, male_data)
-gps_hmm <- gps_hmm[,c(1, 4, 5, 6, 7, 14, 15, 16)] # ID Ring DateTime Sex Year Longitude Latitude State
-colnames(gps_hmm)[8] <- "State_HMM"
-
-# Get ringYr column for comparison
-gps_hmm$RingYr <- as.character(paste0(gps_hmm$Ring, "_", gps_hmm$Year))
-
-## Clear some space
-all_data <- NULL
-all_data.prepped <- NULL
-male_data <- NULL
-female_data <- NULL
-model <- NULL
-gc()
-
-
-#### Load validation data ####
+#### Load validation data #### -------------------------------------------------
 
 gps_manual <- read.csv("Data_inputs/WAAL_gps_2020-2021_manualStates.csv")
 
-colnames(gps_manual)[1] <- "Ring"
-gps_manual$Ring <- as.character(gps_manual$Ring)
-gps_manual$DateTime <- as.POSIXct(gps_manual$DateTime, format = "%d/%m/%Y %H:%M")
+gps_manual$DateTime <- as.POSIXct(gps_manual$DateTime, format = "%Y-%m-%d %H:%M:%S")
 colnames(gps_manual)[8] <- "state_manual"
 
-# Get ringYr column for comparison
-gps_manual$RingYr <- as.character(paste0(gps_manual$Ring, "_", gps_manual$Year))
+# Remove duplicates
+gps_manual <- gps_manual[!duplicated(gps_manual[c("Ring", "DateTime")]),]
 
-#### Perform the validation ####
+#### Perform the validation #### -----------------------------------------------
 
-## Extract relevant birds
-valBirds <- unique(gps_manual$RingYr)
-gps_hmm.subset <- subset(gps_hmm, RingYr %in% valBirds)
+## Covert variables to factors
+gps_manual$State_HMM <- tolower(gps_manual$State_HMM)
+gps_manual[,c("State_HMM", "behaviour")] <- lapply(gps_manual[,c("State_HMM", "behaviour")], as.factor)
 
-## Merge to nearest minute
-setkey(setDT(gps_hmm.subset), "Ring", "DateTime")
-setkey(setDT(gps_manual), "Ring", "DateTime")
-gps_comp <- as.data.frame(gps_hmm.subset[gps_manual, roll = "nearest"])
+## Sample sizes of each behaviour
+nrow(subset(gps_manual, behaviour == "travel")) # 841
+nrow(subset(gps_manual, behaviour == "search")) # 695
+nrow(subset(gps_manual, behaviour == "rest")) # 791
+
+## Compute overall confusion matrix
+confusionMatrix(gps_manual$State_HMM, gps_manual$behaviour)
+
+tab <- table(gps_manual$State_HMM, gps_manual$behaviour)
+
+tab
+
+#         rest search travel
+# rest    621     46     33
+# search  153    468    155
+# travel   17    181    653
+
+## Accuracy
+tab[1,1]/colSums(tab)[1] # rest 0.7850822 
+tab[2,2]/colSums(tab)[2] # search 0.6733813
+tab[3,3]/colSums(tab)[3] # travel 0.7764566 
+
+## Bold birds only
+tab_bold <- table(gps_manual$State_HMM[gps_manual$boldCat == "bold"], 
+                  gps_manual$behaviour[gps_manual$boldCat == "bold"])
+
+tab_bold
+
+#         rest search travel
+# rest    324     14      8
+# search   90    240     76
+# travel    9    117    370
+
+## Accuracy
+tab_bold[1,1]/colSums(tab_bold)[1] # rest 0.7659574
+tab_bold[2,2]/colSums(tab_bold)[2] # search 0.6469003 
+tab_bold[3,3]/colSums(tab_bold)[3] # travel 0.814978
 
 
-# Merge data
-gps_comp$state_manual[gps_comp$state_manual == 3] <- "Rest"
-gps_comp$state_manual[gps_comp$state_manual == 2] <- "Search"
-gps_comp$state_manual[gps_comp$state_manual == 1] <- "Travel"
+## Shy birds only
 
-gps_comp$validation <- ifelse(gps_comp$state_manual != gps_comp$State_HMM, 0, 1)
-gps_comp <- subset(gps_comp, !is.na(validation))
+tab_shy <- table(gps_manual$State_HMM[gps_manual$boldCat == "shy"], 
+                  gps_manual$behaviour[gps_manual$boldCat == "shy"])
+
+tab_shy
+
+#         rest search travel
+# rest    297     32     25
+# search   63    228     79
+# travel    8     64    283
+
+## Accuracy
+tab_shy[1,1]/colSums(tab_shy)[1] # rest 0.8070652 
+tab_shy[2,2]/colSums(tab_shy)[2] # search 0.7037037 
+tab_shy[3,3]/colSums(tab_shy)[3] # travel 0.7312661 
 
 
-### Compute accuracy
 
-# Convert to factors
-gps_comp$State_HMM <- as.factor(gps_comp$State_HMM)
-gps_comp$state_manual <- as.factor(gps_comp$state_manual)
+#### Plot validating vs HMM data #### --------------------------------------------------
 
-## Compute confusion matrix
-confusionMatrix(gps_comp$State_HMM, gps_comp$state_manual)
+### Pre-processing for plotting 
 
-tab <- table(gps_comp$State_HMM, gps_comp$state_manual)
-tab <- tab / rowSums(tab)
+# Load full GPS data for plotting
+allgps <- read.csv("Data_inputs/WAAL_GPS_2010-2021_personality_wind.csv")
+allgps$DateTime <- as.POSIXct(allgps$DateTime, 
+                              format = "%Y-%m-%d %H:%M:%S",
+                              tz = "UTC")
+
+# Keep only rings where labelled data
+rings.keep <- unique(gps_manual$Ring)
+allgps <- subset(allgps, Ring %in% rings.keep)
+
+# Merge in labelled states
+gps_labels <- gps_manual[,c("Ring", "DateTime", "State_HMM", "behaviour")]
+allgps <- merge(allgps, gps_labels, by = c("Ring", "DateTime"), all.x = T)
+allgps$State_HMM <- ifelse(is.na(allgps$State_HMM), "unknown", 
+                           as.character(allgps$State_HMM) )
+allgps$behaviour <- ifelse(is.na(allgps$behaviour), "unknown", 
+                           as.character(allgps$behaviour) )
+
+## Set projections for plotting
+proj.dec <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+proj.utm <- "+proj=laea +lat_0=-46.358639 +lon_0=51.706972 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0"
+
+# Get world map
+world <- ne_countries(scale = "medium", returnclass = "sf")
+world2 <- sf::st_transform(world, crs = proj.utm)
+
+# Set behaviour colours 
+travel_col <- "#648FFF"
+search_col <- "#DC267F"
+rest_col <- "#FFB000"
+unknown_col <- "#B1B3B8"
+
+# Project data
+allgps.proj <- allgps
+coordinates(allgps.proj) <- ~ Longitude+Latitude
+proj4string(allgps.proj) <- proj.dec
+allgps.sp <- spTransform(allgps.proj, CRS(proj.utm))
+allgps.t <- as.data.frame(allgps.sp)
+
+# Isolate rings
+mykits <- unique(allgps$Ring)
+
+for (i in 1:length(mykits)){
+  
+  # Select the ring
+  mygps <- subset(allgps.t, Ring == mykits[i])
+  
+  ## Build the manual plot
+  manualPlot <- ggplot(data = world2) + 
+    geom_sf(fill = "cadetblue", colour = "grey") +
+    ggspatial::annotation_scale(location = "bl", width_hint = 0.25, style = "bar") +
+    coord_sf(crs = proj.utm, xlim = c(max(mygps$Longitude)+1000, 
+                                      min(mygps$Longitude)-1000), 
+             ylim = c(min(mygps$Latitude)-1000,
+                      max(mygps$Latitude)+1000),
+             label_axes = list(top = "E", left = "N", bottom = "E", right = "N")) +
+    geom_path(aes(x = Longitude, y = Latitude, colour = behaviour, group = "identity"), 
+              size = 1.5, dat = mygps) +
+    scale_colour_manual(values = c(rest_col, search_col, travel_col, unknown_col), 
+                        labels = c("Rest", "Search", "Travel", "Unlabelled"), 
+                        name = "Behaviour") +
+    ggtitle(paste("Manual labels:", mygps$Ring[1])) +
+    theme(panel.background = element_rect(fill = "white"), 
+          panel.grid.major = element_line(colour = "grey80"),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text.x.bottom = element_blank(), axis.title.x.bottom = element_blank(),
+          axis.text.y.right = element_blank(), axis.title.y.right = element_blank(),
+          axis.title.y.left = element_blank(),
+          legend.background = element_rect(fill = "transparent"),
+          legend.key = element_blank(),
+          legend.position = c(0.92, 0.12),
+          plot.tag = element_text(size = 20),
+          plot.title = element_text(size = 20, face = "bold"))
+  
+  assign(paste0("manual_", mygps$Ring[1]),
+          manualPlot)
+  
+  ## Build the HMM plot
+  hmmPlot <- ggplot(data = world2) + 
+    geom_sf(fill = "cadetblue", colour = "grey") +
+    ggspatial::annotation_scale(location = "bl", width_hint = 0.25, style = "bar") +
+    coord_sf(crs = proj.utm, xlim = c(max(mygps$Longitude)+1000, 
+                                      min(mygps$Longitude)-1000), 
+             ylim = c(min(mygps$Latitude)-1000,
+                      max(mygps$Latitude)+1000),
+             label_axes = list(top = "E", left = "N", bottom = "E", right = "N")) +
+    geom_path(aes(x = Longitude, y = Latitude, colour = State_HMM, group = "identity"), 
+              size = 1.5, dat = mygps) +
+    scale_colour_manual(values = c(rest_col, search_col, travel_col, unknown_col), 
+                        labels = c("Rest", "Search", "Travel", "Unlabelled"), 
+                        name = "Behaviour") +
+    ggtitle(paste("HMM labels:", mygps$Ring[1])) +
+    theme(panel.background = element_rect(fill = "white"), 
+          panel.grid.major = element_line(colour = "grey80"),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text.x.bottom = element_blank(), axis.title.x.bottom = element_blank(),
+          axis.text.y.right = element_blank(), axis.title.y.right = element_blank(),
+          axis.title.y.left = element_blank(),
+          legend.position = "none",
+          plot.tag = element_text(size = 20),
+          plot.title = element_text(size = 20, face = "bold")) 
+  
+  assign(paste0("hmm_", mygps$Ring[1]),
+         hmmPlot)
+  
+}
+
+
+# #### FIGURE S7 : Validation plots ---------------------------------------
+
+## Choose 2 exemplar plots
+manual_A <- manual_WAAL225 + theme(legend.position = c(0.1, 0.82)) + labs(tag = "(a)")
+hmm_A <- hmm_WAAL225 + theme(legend.position = "none") + labs(tag = "(b)")
+manual_B <- manual_WAAL165 + theme(legend.position = "none") + labs(tag = "(c)")
+hmm_B <- hmm_WAAL165 + theme(legend.position = "none") + labs(tag = "(d)")
+
+png(filename = "Figures/FIGS7_validation_plot.png", width = 12, height = 10, units = "in", res = 600)
+ggarrange(manual_A, hmm_A,
+          manual_B, hmm_B,
+          ncol = 2, nrow = 2,
+          align = "h")
+dev.off()
 
 
 # 2. PERMUTATION - RUN MODELS ------------------------------------------------
@@ -283,6 +385,8 @@ results.M_files <- list.files(results.M_path)
 results.M_list <- vector("list", length = length(results.M_files))
 
 for (i in 1:length(results.M_files)) {
+  
+  if (file.size(paste0(results.M_path, results.M_files[i])) == 0) next
   load(paste0(results.M_path, results.M_files[i]))
   results.M_list[[i]] <- AIC.p
 }
@@ -293,13 +397,15 @@ results.M <- data.frame(do.call("rbind", results.M_list))
 results.M <- results.M[order(results.M$Iter),]
 
 ## Match to randomised covariate
-covariates <- rep(c("WindSp", "WindDir", "LoD", "mean_BLUP_logit"), each = 50)
+covariates <- data.frame(cov = rep(c("WindSp", "WindDir", "LoD", "mean_BLUP_logit"), each = 50),
+                         Iter = seq(1:200)-1)
+results.M <- merge(results.M, covariates, by = "Iter", all.x = TRUE)
 results.M$cov <- covariates
 
 ## Get AIC of best supported model
-file.in <- paste0("./Data_outputs/", paste0("M_mod_", 6, ".RData"))
+file.in <- paste0("./Data_outputs/", paste0("M_mod_", 4, ".RData"))
 load(file = file.in)
-m.best.mod <- model
+m.best.mod <- mod.p
 
 AIC.M <- AIC(m.best.mod)
 
@@ -324,7 +430,7 @@ covariates <- rep(c("WindSp", "WindDir", "LoD", "mean_BLUP_logit"), each = 50)
 results.F$cov <- covariates
 
 ## Get AIC of best supported model
-file.in <- paste0("./Data_outputs/", paste0("F_mod_", 8, ".RData"))
+file.in <- paste0("./Data_outputs/", paste0("F_mod_", 9, ".RData"))
 load(file = file.in)
 f.best.mod <- model
 
@@ -366,3 +472,7 @@ dev.off()
 png(filename = "Figures/supp_AIC_comparison_MALE.png", width = 9, height = 7, units = "in", res = 600)
 maleplot
 dev.off()
+
+
+
+

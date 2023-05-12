@@ -10,8 +10,10 @@ A short description of each script is given below.
 - **1_HMM_construct-models.R** This script is used to fit Hidden Markov Models (HMMs) with every possible combination of boldness and boldness by wind interaction covariates. AIC is used to compare the relative support for each. The code here fits the models, outputs the AIC for each, as well as autocorrelation and goodness-of-fit plots. _Note: depending on processing power, each model may take several hours to compile and so this script will take several days to run to completion._
 - **2_HMM_stationary_probabilities.R** This script takes the two best-supported models (for males and females respectively) and uses these to plot stationary probabilities corresponding to Figure 3 in the manuscript and Figure S4 in the Supplementary Information. 
 - **3_HMM_transition_estimates.R** This script takes the two best-supported models (for males and females respectively) and uses these to plot transition estimates corresponding to Figure 2 in the manuscript and Figures S1-S3 in the Supplementary Information. 
-- **4_HMM_validation.R** This script contains code to run our two validation methods, described in the Methods and Supplementary Information. In part 1)  the behavioural output of our best-supported HMMs is compared with expert classification of behaviours from foraging tracks. In part 2) the value of each covariate in the best supported model is randomly shuffled 50 times, and support for this randomly shuffled model compared to the 'real' model. _Note: depending on processing power, each randoised model in part 2 may take several hours to compile and so this script will take several days to run to completion._
-- **SUPP-INF_wind_availability_by_personality.R** This script contains code to run the analyses described in Supplementary Information, which compare wind speeds and wind directions experienced by birds as a function of their boldness measure. 
+- **4_HMM_validation.R** This script contains code to run our two validation methods, described in the Methods and Supplementary Information. In part 1)  the behavioural output of our best-supported HMMs is compared with expert classification of behaviours from foraging tracks. In part 2) the value of each covariate in the best supported model is randomly shuffled 50 times, and support for this randomly shuffled model compared to the 'real' model. _Note: depending on processing power, each randomised model in part 2 may take several hours to compile and so this script will take several days to run to completion._
+-  **SUPP-INF_plot-GPS.R** This script contains code to analyse the effect of boldness estimates on fitness as a function of bird age. 
+- **SUPP-INF_plot-GPS.R** This script contains code to process the GPS data and produce Figures 1 and S1, which show the distribution of birds according to their boldness estimate and across years. 
+- **SUPP-INF_wind_availability_by_personality.R** This script contains code to run the analyses described in Supplementary Information, which compare wind speeds and wind directions experienced by birds as a function of their boldness estimate and across years. 
 
 ## Data inputs
 
@@ -29,11 +31,6 @@ These data are used in the above scripts. Note that all Rings/BirdIDs have been 
   -  _LoD_ : Factor denoting daytime (L) or night (D)
   -  _Trip_bout_ : Factor encoding individual trip identity
   -  _mean_BLUP_logit_ : Numeric boldness score for that individual
-
-- **WAAL_GPS_2020-2021_wind_directions.csv** Abridged dataset giving wind directions experienced for each individual at each GPS fix time point, used to compare wind availability for birds of different boldness scores in Supplementary Information. The columns are as follows:
-  - _Ring_: Factor encoding unique ID of bird
-  - _time_ : Date and time of fix to nearest second
-  - _winddirection_blowingfrom_ : Wind direction for each fix; numeric
 
 - **WAAL_gps_2020-2021_manualStates.csv** Dataset giving expert classification of each GPS fix into a different behavioural state. Used for model validation described in Methods and Supplementary Information. The columns are as follows:
   - _BirdID_ : Factor encoding unique ID of bird
