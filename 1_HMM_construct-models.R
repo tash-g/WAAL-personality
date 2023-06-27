@@ -8,19 +8,7 @@
 
 # Preamble ----------------------------------------------------------------
 
-# Define the packages
-packages <- c("dplyr", "momentuHMM", "ggplot2")
-
-# Install packages not yet installed - change lib to library path
-#installed_packages <- packages %in% rownames(installed.packages())
-
-#if (any(installed_packages == FALSE)) {
-#  install.packages(packages[!installed_packages], lib = "C:/Users/libraryPath")
-#}
-
-# Load packages
-invisible(lapply(packages, library, character.only = TRUE))
-
+library(momentuHMM); library(ggplot2); library(dplyr)
 
 ### Create outputs folder
 out.path <- "./Data_outputs/"
@@ -32,13 +20,13 @@ if(dir.exists(out.path) == FALSE) {
 ### LOAD IN TRACKS
 gps <- read.csv(file = "./Data_inputs/WAAL_GPS_2010-2021_personality_wind.csv", 
                 na.strings = "NA")
-gps <- rename(gps, ID = Trip_bout, WindDir = Dev.wind2)
-
+names(gps)[10] <- "ID"
+names(gps)[8] <- "WindDir"
 gps$DateTime <- as.POSIXct(gps$DateTime, format = "%Y-%m-%d %H:%M:%S")
 gps <- gps[order(gps$ID, gps$DateTime),]
 
 ## Isolate columns and specify types
-gps[, c("Ring", "Sex", "Year", "LoD", "ID")] <- lapply(gps[, c("Ring", "Sex", "Year", "LoD", "ID")], as.factor) 
+gps[, c(1,3,4,9,10)] <- lapply(gps[, c(1,3,4,9,10)], as.factor) # ring, sex, year, LoD, ID
 gps[ ,c(5:8,11)] <- lapply(gps[,c(5:8,11)], as.numeric) # Longitude, Latitude, WindSp, WindDir, mean_BLUP_logit
 
 # Some NA wind directions, because we don't have bearings for the last fix of the trip
@@ -115,8 +103,8 @@ m1_F <- fitHMM(
   stateNames = stateNames
 )
 
-#save(m1_M, file = "Data_outputs/M_mod_1.RData")
-#save(m1_F, file = "Data_outputs/F_mod_1.RData")
+save(m1_M, file = "Data_outputs/M_mod_1.RData")
+save(m1_F, file = "Data_outputs/F_mod_1.RData")
 
 # Plot pseudo-residuals
 plotPR(m1_M)
@@ -142,26 +130,27 @@ sex_initial <- "F"
 
 ## Set up personality formulae 
 
-formula <- vector(mode = "list", length = 19)	
-formula[[2]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:WindDir + WindSp:mean_BLUP_logit + WindDir:mean_BLUP_logit + WindSp:WindDir:mean_BLUP_logit
-formula[[3]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:WindDir + WindSp:mean_BLUP_logit + WindSp:WindDir:mean_BLUP_logit
-formula[[4]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:WindDir + WindSp:mean_BLUP_logit
-formula[[5]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:WindDir + WindDir:mean_BLUP_logit + WindSp:WindDir:mean_BLUP_logit
-formula[[6]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:WindDir + WindSp:mean_BLUP_logit + WindDir:mean_BLUP_logit
-formula[[7]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:WindDir + WindDir:mean_BLUP_logit
-formula[[8]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:WindDir + WindSp:WindDir:mean_BLUP_logit
-formula[[9]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:WindDir
-formula[[10]] <- ~ LoD + WindSp + WindDir + WindSp:WindDir
-formula[[11]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:mean_BLUP_logit + WindDir:mean_BLUP_logit + WindSp:WindDir:mean_BLUP_logit
-formula[[12]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:mean_BLUP_logit + WindSp:WindDir:mean_BLUP_logit
-formula[[13]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:mean_BLUP_logit
-formula[[14]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindDir:mean_BLUP_logit + WindSp:WindDir:mean_BLUP_logit
-formula[[15]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindDir:mean_BLUP_logit + WindSp:mean_BLUP_logit 
-formula[[16]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindDir:mean_BLUP_logit
-formula[[17]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit + WindSp:WindDir:mean_BLUP_logit
-formula[[18]] <- ~ LoD + WindSp + WindDir + mean_BLUP_logit
-formula[[19]] <- ~ LoD + WindSp + WindDir
-
+formula <- vector(mode = "list", length = 21)	
+formula[[2]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir + WindSp:WindDir
+formula[[3]] <- ~ WindSp:mean_BLUP_logit + WindSp + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir + WindSp:WindDir
+formula[[4]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir + WindSp:WindDir
+formula[[5]] <- ~ WindSp:mean_BLUP_logit + WindSp + LoD + WindDir + WindSp:WindDir
+formula[[6]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir
+formula[[7]] <- ~ WindSp:mean_BLUP_logit + WindSp + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir
+formula[[8]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir
+formula[[9]] <- ~ WindSp:mean_BLUP_logit + WindSp + LoD + WindDir
+formula[[10]] <- ~ WindSp + mean_BLUP_logit + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir + WindSp:WindDir
+formula[[11]] <- ~ WindSp + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir + WindSp:WindDir
+formula[[12]] <- ~ WindSp + mean_BLUP_logit + LoD + WindDir + WindSp:WindDir
+formula[[13]] <- ~ WindSp + LoD + WindDir + WindSp:WindDir
+formula[[14]] <- ~ WindSp + mean_BLUP_logit + LoD + WindDir
+formula[[15]] <- ~ WindSp + LoD + WindDir
+formula[[16]] <- ~ WindSp + mean_BLUP_logit + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir
+formula[[17]] <- ~ WindSp + LoD + WindDir + WindSp:mean_BLUP_logit:WindDir
+formula[[18]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir + WindDir:mean_BLUP_logit + WindSp:mean_BLUP_logit:WindDir + WindSp:WindDir
+formula[[19]] <- ~ WindSp + mean_BLUP_logit + LoD + WindDir + WindDir:mean_BLUP_logit + WindSp:mean_BLUP_logit:WindDir + WindSp:WindDir
+formula[[20]] <- ~ WindSp:mean_BLUP_logit + WindSp + mean_BLUP_logit + LoD + WindDir + WindDir:mean_BLUP_logit + WindSp:WindDir
+formula[[21]] <- ~ WindSp + mean_BLUP_logit + LoD + WindDir + WindDir:mean_BLUP_logit + WindSp:WindDir
 
 
 # This function gets starting values for each model from existing null model 
@@ -226,9 +215,6 @@ for (i in 1:length(formula)) {
   
   file.in <- paste0("./Data_outputs/", paste0(sex_initial,"_mod_", i, ".RData"))
   load(file = file.in)
-  
-  if (i > 1) {model <- mod.p}
-  
   if (i == 1) { m.list[[i]] <- model_run} else { m.list[[i]] <- model}
   
   ## Extract AIC of model
@@ -244,14 +230,14 @@ for (i in 1:length(formula)) {
   par(mfrow = c(1,1))
   ylimit <- qnorm((1 + 0.95)/2)/sqrt(length(pr$stepRes[!is.na(pr$stepRes)])) + 1
   acf(pr$stepRes[is.finite(pr$stepRes)],lag.max = 300)
-  name.plot <- paste0("./Figures/Model checking/", paste0(sex_initial, "_mod_", i, "_acf_step.png"))
+  name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_acf_step.png"))
   dev.copy(png, name.plot,  width = 800, height = 500)
   dev.off()
   
   # Turning angle
   par(mfrow = c(1,1))
   acf(pr$angleRes[!is.na(pr$angleRes)],lag.max = 300)
-  name.plot <- paste0("./Figures/Model checking/", paste0(sex_initial, "_mod_", i, "_acf_angle.png"))
+  name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_acf_angle.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off()
   
@@ -266,13 +252,13 @@ for (i in 1:length(formula)) {
   plot(stepres ~ ws, data = res.df)
   boxplot(angleres ~ lod, data = res.df)
   plot(angleres ~ ws, data = res.df)
-  name.plot <- paste0("./Figures/Model checking/", paste0(sex_initial, "_mod_", i, "_pseudo-residuals.png"))
+  name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_pseudo-residuals.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off()
   
   # outputting qq plots
   plotPR(m.list[[i]])
-  name.plot <- paste0("./Figures/Model checking/", paste0(sex_initial, "_mod_", i, "_acf_qq.png"))
+  name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_acf_qq.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off() 
   
@@ -306,10 +292,9 @@ for (i in 1:length(formula)) {
                   width = 0.8, position = pd) +
     theme_bw()
   print(pl)
-  name.plot <- paste0("./Figures/Model checking/", paste0(sex_initial, "_mod_", i, "_coefficients.png"))
+  name.plot <- paste0("./Figures/", paste0(sex_initial, "_mod_", i, "_coefficients.png"))
   dev.copy(png, name.plot, width = 800, height = 500)
   dev.off()
-  
 }
 
 # Warning messages appear ("removed containing missing values") due to upper and lower CIs which are sometimes "NA"
