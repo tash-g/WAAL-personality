@@ -2,7 +2,9 @@
 Natasha Gillies, Henri Weimerskirch, Jack Thorley, Thomas A. Clay, Lucía Martina Martín López, Rocio Joo, Mathieu Basille, Samantha C. Patrick
 
 ## Overview
-This repository contains scripts and data to recreate the main results and figures of this paper (currently in prep). 
+This repository contains scripts and data to recreate the main results and figures of the following manuscript:
+
+Boldness predicts plasticity in flight responses to winds. (2023) Gillies N, Weirmerskirch H, Thorley J, Clay TA, Martin Lopez LM, Joo R, Basille M, Patrick SC. _Journal of Animal Ecology._ 92(**9**): 1730-1742. DOI: https://doi.org/10.1111/1365-2656.13968
 
 ## Scripts
 A short description of each script is given below.
